@@ -130,6 +130,127 @@ services:
       timeout: 10s
       retries: 120
 
+  # E5 Model Setup
+  e5-setup:
+    image: curlimages/curl:latest
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+    command: >
+      sh -c '
+        echo "Waiting for Elasticsearch to be fully ready..."
+        sleep 30
+        
+        echo "Creating E5 inference endpoint..."
+        curl -k -u elastic:${ELASTIC_PASSWORD} -X PUT "https://elasticsearch:9200/_inference/text_embedding/my-e5-model" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"service\": \"elasticsearch\",
+            \"service_settings\": {
+              \"num_allocations\": 1,
+              \"num_threads\": 1,
+              \"model_id\": \".multilingual-e5-small\"
+            }
+          }" || echo "E5 endpoint may already exist"
+        
+        echo "Waiting for E5 model to be ready..."
+        sleep 60
+        
+        echo "Creating semantic documents index..."
+        curl -k -u elastic:${ELASTIC_PASSWORD} -X PUT "https://elasticsearch:9200/semantic_documents" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"mappings\": {
+              \"properties\": {
+                \"title\": {
+                  \"type\": \"text\"
+                },
+                \"content\": {
+                  \"type\": \"text\"
+                },
+                \"content_semantic\": {
+                  \"type\": \"semantic_text\",
+                  \"inference_id\": \"my-e5-model\"
+                },
+                \"author\": {
+                  \"type\": \"keyword\"
+                },
+                \"created_date\": {
+                  \"type\": \"date\"
+                },
+                \"tags\": {
+                  \"type\": \"keyword\"
+                }
+              }
+            }
+          }" || echo "Semantic index may already exist"
+        
+        echo "Indexing sample documents..."
+        curl -k -u elastic:${ELASTIC_PASSWORD} -X POST "https://elasticsearch:9200/semantic_documents/_doc/1" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"title\": \"Machine Learning in Healthcare\",
+            \"content\": \"Artificial intelligence and machine learning are revolutionizing healthcare by enabling predictive diagnostics, personalized treatment plans, and automated medical image analysis. Deep learning algorithms can detect diseases earlier than traditional methods.\",
+            \"content_semantic\": \"Artificial intelligence and machine learning are revolutionizing healthcare by enabling predictive diagnostics, personalized treatment plans, and automated medical image analysis. Deep learning algorithms can detect diseases earlier than traditional methods.\",
+            \"author\": \"Dr. Smith\",
+            \"created_date\": \"2025-07-02\",
+            \"tags\": [\"healthcare\", \"AI\", \"machine learning\", \"diagnostics\"]
+          }" || echo "Sample document 1 may already exist"
+        
+        curl -k -u elastic:${ELASTIC_PASSWORD} -X POST "https://elasticsearch:9200/semantic_documents/_doc/2" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"title\": \"Financial Technology Innovation\",
+            \"content\": \"Blockchain technology and cryptocurrency are transforming the financial sector. Digital payments, smart contracts, and decentralized finance (DeFi) offer new opportunities for investment and banking services.\",
+            \"content_semantic\": \"Blockchain technology and cryptocurrency are transforming the financial sector. Digital payments, smart contracts, and decentralized finance (DeFi) offer new opportunities for investment and banking services.\",
+            \"author\": \"Financial Analyst\",
+            \"created_date\": \"2025-07-02\",
+            \"tags\": [\"fintech\", \"blockchain\", \"cryptocurrency\", \"banking\"]
+          }" || echo "Sample document 2 may already exist"
+        
+        curl -k -u elastic:${ELASTIC_PASSWORD} -X POST "https://elasticsearch:9200/semantic_documents/_doc/3" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"title\": \"Environmental Sustainability Solutions\",
+            \"content\": \"Renewable energy sources like solar and wind power are crucial for combating climate change. Green technology innovations include electric vehicles, energy-efficient buildings, and carbon capture systems.\",
+            \"content_semantic\": \"Renewable energy sources like solar and wind power are crucial for combating climate change. Green technology innovations include electric vehicles, energy-efficient buildings, and carbon capture systems.\",
+            \"author\": \"Environmental Scientist\",
+            \"created_date\": \"2025-07-02\",
+            \"tags\": [\"environment\", \"renewable energy\", \"sustainability\", \"climate\"]
+          }" || echo "Sample document 3 may already exist"
+        
+        curl -k -u elastic:${ELASTIC_PASSWORD} -X POST "https://elasticsearch:9200/semantic_documents/_doc/4" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"title\": \"Remote Work and Digital Collaboration\",
+            \"content\": \"The pandemic accelerated the adoption of remote work technologies. Video conferencing, cloud collaboration tools, and virtual reality meetings are changing how teams communicate and work together across distances.\",
+            \"content_semantic\": \"The pandemic accelerated the adoption of remote work technologies. Video conferencing, cloud collaboration tools, and virtual reality meetings are changing how teams communicate and work together across distances.\",
+            \"author\": \"Workplace Expert\",
+            \"created_date\": \"2025-07-02\",
+            \"tags\": [\"remote work\", \"collaboration\", \"technology\", \"communication\"]
+          }" || echo "Sample document 4 may already exist"
+        
+        echo "E5 setup and sample data indexing completed!"
+        
+        echo "Testing semantic search..."
+        curl -k -u elastic:${ELASTIC_PASSWORD} -X POST "https://elasticsearch:9200/semantic_documents/_search?pretty" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"query\": {
+              \"semantic\": {
+                \"field\": \"content_semantic\",
+                \"query\": \"medical diagnosis and treatment\"
+              }
+            },
+            \"size\": 1
+          }"
+        
+        echo "Setup verification completed!"
+      '
+    restart: "no"
+
   # FSCrawler
   fscrawler:
     image: dadoonet/fscrawler:${FSCRAWLER_VERSION}

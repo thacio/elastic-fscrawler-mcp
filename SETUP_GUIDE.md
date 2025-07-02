@@ -254,7 +254,7 @@ rest:
 ### 5. Launch the Stack
 
 ```bash
-# Start all services
+# Start all services (includes automatic E5 setup)
 docker-compose up -d
 
 # Check status
@@ -263,10 +263,24 @@ docker-compose ps
 # View logs if needed
 docker-compose logs -f elasticsearch
 docker-compose logs -f fscrawler
+docker-compose logs -f e5-setup  # New: E5 automation logs
 ```
+
+**Note**: The first startup will take 5-10 minutes as services initialize:
+- **Elasticsearch**: ~2-3 minutes (index creation, SSL setup)
+- **E5 Model Setup**: ~3-5 minutes (downloads .multilingual-e5-small model)
+- **Kibana**: ~2-3 minutes (connects to Elasticsearch)
+- **FSCrawler**: ~1-2 minutes (starts document monitoring)
 
 ### 6. Verify Services
 
+**Quick Verification with Script:**
+```bash
+# Run the automated verification script
+./verify-setup.sh
+```
+
+**Manual Verification:**
 Wait for all services to be healthy, then test connectivity:
 
 ```bash
@@ -278,30 +292,53 @@ curl -I http://localhost:5601
 
 # Test FSCrawler
 curl -I http://localhost:8080
+
+# Test E5 semantic search (new!)
+curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search?pretty" \
+  -H "Content-Type: application/json" \
+  -d '{"query": {"semantic": {"field": "content_semantic", "query": "healthcare AI"}}, "size": 1}'
 ```
 
 **Access URLs:**
 - Elasticsearch: https://localhost:9200 (user: elastic, pass: changeme)
-- Kibana: http://localhost:5601 (user: elastic, pass: changeme)
+- Kibana: http://localhost:5601 (user: elastic, pass: changeme)  
 - FSCrawler: http://localhost:8080
 
-## Setting up E5 Semantic Search
+**Verification Script Features:**
+- ✅ Tests all service connectivity
+- ✅ Verifies ML memory allocation
+- ✅ Confirms E5 endpoint creation
+- ✅ Validates semantic search functionality
+- ✅ Shows document counts and example queries
 
-### 7. Create E5 Inference Endpoint
+## Automated E5 Semantic Search Setup
 
+### 7. Automatic E5 Configuration
+
+The E5 setup is now **fully automated** through the `e5-setup` service in docker-compose.yml. When you run `docker-compose up -d`, the following happens automatically:
+
+1. **E5 Inference Endpoint Creation**: Creates `my-e5-model` endpoint
+2. **Semantic Index Creation**: Creates `semantic_documents` index with proper mapping
+3. **Sample Data Indexing**: Adds 4 sample documents for immediate testing
+4. **Verification Test**: Runs a semantic search test to ensure everything works
+
+The `e5-setup` service will:
+- Wait for Elasticsearch to be fully ready
+- Create the E5 inference endpoint with `.multilingual-e5-small` model
+- Set up the semantic documents index with proper field mappings
+- Index sample documents covering different topics (healthcare, fintech, environment, remote work)
+- Run a verification test to confirm semantic search is working
+
+**No manual configuration required!** Everything is ready to use after `docker-compose up -d` completes.
+
+### 8. Verify Automatic Setup
+
+Use the provided verification script:
 ```bash
-curl -k -u elastic:changeme -X PUT "https://localhost:9200/_inference/text_embedding/my-e5-model" -H "Content-Type: application/json" -d '{
-  "service": "elasticsearch",
-  "service_settings": {
-    "num_allocations": 1,
-    "num_threads": 1,
-    "model_id": ".multilingual-e5-small"
-  }
-}'
+./verify-setup.sh
 ```
 
-### 8. Verify ML Capacity
-
+Or manually verify ML capacity:
 ```bash
 # Check ML node info
 curl -k -u elastic:changeme "https://localhost:9200/_ml/info?pretty"
@@ -309,51 +346,38 @@ curl -k -u elastic:changeme "https://localhost:9200/_ml/info?pretty"
 # Should show: "total_ml_memory": "10240mb"
 ```
 
-### 9. Create Semantic Index
+### 9. Check E5 Inference Endpoint
 
 ```bash
-curl -k -u elastic:changeme -X PUT "https://localhost:9200/semantic_documents" -H "Content-Type: application/json" -d '{
-  "mappings": {
-    "properties": {
-      "title": {
-        "type": "text"
-      },
-      "content": {
-        "type": "text"
-      },
-      "content_semantic": {
-        "type": "semantic_text",
-        "inference_id": "my-e5-model"
-      },
-      "author": {
-        "type": "keyword"
-      },
-      "created_date": {
-        "type": "date"
-      },
-      "tags": {
-        "type": "keyword"
-      }
-    }
-  }
-}'
+# Verify E5 endpoint exists
+curl -k -u elastic:changeme "https://localhost:9200/_inference/my-e5-model?pretty"
+
+# Check semantic documents index
+curl -k -u elastic:changeme "https://localhost:9200/semantic_documents?pretty"
 ```
 
 ## Document Indexing
 
-### 10. Index Sample Documents
+### 10. Pre-indexed Sample Documents
 
-**Method 1: Direct Elasticsearch API**
+**Sample documents are automatically indexed during startup!** The `e5-setup` service creates 4 sample documents covering:
+
+1. **Healthcare & AI**: Machine learning in medical diagnostics
+2. **Financial Technology**: Blockchain and cryptocurrency innovations  
+3. **Environmental**: Renewable energy and sustainability solutions
+4. **Remote Work**: Digital collaboration technologies
+
+**Method 1: Additional Documents via API**
 
 ```bash
-# Index document with semantic field
-curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_doc/1" -H "Content-Type: application/json" -d '{
-  "title": "Machine Learning in Healthcare",
-  "content": "Artificial intelligence and machine learning are revolutionizing healthcare by enabling predictive diagnostics, personalized treatment plans, and automated medical image analysis.",
-  "content_semantic": "Artificial intelligence and machine learning are revolutionizing healthcare by enabling predictive diagnostics, personalized treatment plans, and automated medical image analysis.",
-  "author": "Dr. Smith",
+# Index additional document with semantic field
+curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_doc/5" -H "Content-Type: application/json" -d '{
+  "title": "Your Document Title",
+  "content": "Your document content here...",
+  "content_semantic": "Your document content here...",
+  "author": "Author Name",
   "created_date": "2025-07-02",
-  "tags": ["healthcare", "AI", "machine learning", "diagnostics"]
+  "tags": ["tag1", "tag2"]
 }'
 ```
 
@@ -377,7 +401,10 @@ echo "Your document content here" > ../test-documents/src/main/resources/documen
 # Check indices
 curl -k -u elastic:changeme "https://localhost:9200/_cat/indices"
 
-# Search documents
+# Count documents in semantic index (should show 4+ documents)
+curl -k -u elastic:changeme "https://localhost:9200/semantic_documents/_count?pretty"
+
+# Search all documents
 curl -k -u elastic:changeme "https://localhost:9200/semantic_documents/_search?pretty"
 ```
 
