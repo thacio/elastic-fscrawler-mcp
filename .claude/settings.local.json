@@ -9,7 +9,8 @@
       "Bash(ls:*)",
       "Bash(docker logs:*)",
       "Bash(chmod:*)",
-      "Bash(./verify-setup.sh:*)"
+      "Bash(./verify-setup.sh:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

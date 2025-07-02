@@ -526,6 +526,39 @@ For production environments, consider:
 - Configuring index lifecycle management
 - Adding multiple Elasticsearch nodes for scaling
 
+## Document Management
+
+### Cleaning/Deleting Documents
+
+**Delete all documents from semantic index:**
+```bash
+curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_delete_by_query" \
+  -H "Content-Type: application/json" \
+  -d '{"query": {"match_all": {}}}'
+```
+
+**Delete specific documents:**
+```bash
+# Delete by document ID
+curl -k -u elastic:changeme -X DELETE "https://localhost:9200/semantic_documents/_doc/1"
+
+# Delete by query (e.g., by author)
+curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_delete_by_query" \
+  -H "Content-Type: application/json" \
+  -d '{"query": {"term": {"author": "specific_author"}}}'
+```
+
+**Delete entire index (removes all documents and mappings):**
+```bash
+curl -k -u elastic:changeme -X DELETE "https://localhost:9200/semantic_documents"
+# Note: You'll need to recreate the index with proper mappings after this
+```
+
+**FSCrawler Document Management:**
+- **Add files**: Place in `/mnt/c/test-documents/src/main/resources/documents/` - automatically indexed
+- **Remove files**: Delete from folder - automatically removed from Elasticsearch
+- **Scan interval**: Every 15 minutes (configurable in FSCrawler settings)
+
 ## Features Achieved
 
 ✅ **Full-text search** with Elasticsearch
@@ -535,6 +568,7 @@ For production environments, consider:
 ✅ **ML capabilities** for natural language processing
 ✅ **REST API access** for programmatic integration
 ✅ **Kibana interface** for data visualization
+✅ **Automatic document sync** with file system changes
 
 ## Next Steps
 
