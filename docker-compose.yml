@@ -79,6 +79,13 @@ services:
       - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
       - xpack.security.transport.ssl.verification_mode=certificate
       - xpack.license.self_generated.type=${LICENSE}
+      # ML Configuration for E5 and other models
+      - xpack.ml.enabled=true
+      - xpack.ml.max_machine_memory_percent=50
+      - xpack.ml.max_model_memory_limit=10gb
+      - xpack.ml.use_auto_machine_memory_percent=false
+      # JVM heap size (should be ~50% of container memory)
+      - "ES_JAVA_OPTS=-Xms10g -Xmx10g"
     mem_limit: ${MEM_LIMIT}
     ulimits:
       memlock:
@@ -110,7 +117,9 @@ services:
       - ELASTICSEARCH_USERNAME=kibana_system
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
       - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
-    mem_limit: ${MEM_LIMIT}
+      # Kibana optimization for ML interface
+      - "NODE_OPTIONS=--max-old-space-size=4096"
+    mem_limit: 8gb
     healthcheck:
       test:
         [
