@@ -1,5 +1,6 @@
-# Elasticsearch Documents
-elastic_documents/
+# Elasticsearch Documents (ignore all except README.txt)
+elastic_documents/*
+!elastic_documents/README.txt
 
 # FSCrawler generated files and logs
 logs/
