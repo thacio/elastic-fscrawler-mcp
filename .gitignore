@@ -1,0 +1,28 @@
+# Elasticsearch Documents
+elastic_documents/
+
+# FSCrawler generated files and logs
+logs/
+external/
+config/_default/
+config/*/status.json
+
+# Docker volumes and data
+esdata/
+kibanadata/
+certs/
+
+# Environment files (keep .env template)
+.env.local
+.env.production
+
+# IDE and system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+*.pid

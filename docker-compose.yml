@@ -259,7 +259,7 @@ services:
     environment:
       - FS_JAVA_OPTS=${FS_JAVA_OPTS}
     volumes:
-      - ../../test-documents/src/main/resources/documents/:/tmp/es:ro
+      - ./elastic_documents:/tmp/es:ro
       - ${PWD}/config:/root/.fscrawler
       - ${PWD}/logs:/usr/share/fscrawler/logs
       - ${PWD}/external:/usr/share/fscrawler/external
