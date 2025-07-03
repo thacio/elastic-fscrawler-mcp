@@ -180,75 +180,87 @@ services:
                   \"type\": \"semantic_text\",
                   \"inference_id\": \"my-e5-model\"
                 },
-                \"author\": {
-                  \"type\": \"keyword\"
+                \"path\": {
+                  \"properties\": {
+                    \"real\": {
+                      \"type\": \"keyword\"
+                    },
+                    \"root\": {
+                      \"type\": \"keyword\"
+                    },
+                    \"virtual\": {
+                      \"type\": \"keyword\"
+                    }
+                  }
                 },
-                \"created_date\": {
-                  \"type\": \"date\"
+                \"file\": {
+                  \"properties\": {
+                    \"content_type\": {
+                      \"type\": \"keyword\"
+                    },
+                    \"filename\": {
+                      \"type\": \"keyword\"
+                    },
+                    \"extension\": {
+                      \"type\": \"keyword\"
+                    },
+                    \"filesize\": {
+                      \"type\": \"long\"
+                    },
+                    \"last_modified\": {
+                      \"type\": \"date\"
+                    },
+                    \"created\": {
+                      \"type\": \"date\"
+                    }
+                  }
                 },
-                \"tags\": {
-                  \"type\": \"keyword\"
+                \"meta\": {
+                  \"properties\": {
+                    \"author\": {
+                      \"type\": \"text\"
+                    },
+                    \"title\": {
+                      \"type\": \"text\"
+                    },
+                    \"date\": {
+                      \"type\": \"date\"
+                    },
+                    \"keywords\": {
+                      \"type\": \"text\"
+                    }
+                  }
                 }
               }
             }
           }" || echo "Semantic index may already exist"
         
-        echo "Indexing sample documents..."
-        curl -k -u elastic:${ELASTIC_PASSWORD} -X POST "https://elasticsearch:9200/semantic_documents/_doc/1" \
+        echo "Creating ingest pipeline for semantic documents..."
+        curl -k -u elastic:${ELASTIC_PASSWORD} -X PUT "https://elasticsearch:9200/_ingest/pipeline/semantic_documents_pipeline" \
           -H "Content-Type: application/json" \
           -d "{
-            \"title\": \"Machine Learning in Healthcare\",
-            \"content\": \"Artificial intelligence and machine learning are revolutionizing healthcare by enabling predictive diagnostics, personalized treatment plans, and automated medical image analysis. Deep learning algorithms can detect diseases earlier than traditional methods.\",
-            \"content_semantic\": \"Artificial intelligence and machine learning are revolutionizing healthcare by enabling predictive diagnostics, personalized treatment plans, and automated medical image analysis. Deep learning algorithms can detect diseases earlier than traditional methods.\",
-            \"author\": \"Dr. Smith\",
-            \"created_date\": \"2025-07-02\",
-            \"tags\": [\"healthcare\", \"AI\", \"machine learning\", \"diagnostics\"]
-          }" || echo "Sample document 1 may already exist"
+            \"description\": \"Pipeline to automatically populate semantic field from document content\",
+            \"processors\": [
+              {
+                \"set\": {
+                  \"field\": \"content_semantic\",
+                  \"value\": \"{{content}}\"
+                }
+              }
+            ]
+          }" || echo "Pipeline may already exist"
         
-        curl -k -u elastic:${ELASTIC_PASSWORD} -X POST "https://elasticsearch:9200/semantic_documents/_doc/2" \
-          -H "Content-Type: application/json" \
-          -d "{
-            \"title\": \"Financial Technology Innovation\",
-            \"content\": \"Blockchain technology and cryptocurrency are transforming the financial sector. Digital payments, smart contracts, and decentralized finance (DeFi) offer new opportunities for investment and banking services.\",
-            \"content_semantic\": \"Blockchain technology and cryptocurrency are transforming the financial sector. Digital payments, smart contracts, and decentralized finance (DeFi) offer new opportunities for investment and banking services.\",
-            \"author\": \"Financial Analyst\",
-            \"created_date\": \"2025-07-02\",
-            \"tags\": [\"fintech\", \"blockchain\", \"cryptocurrency\", \"banking\"]
-          }" || echo "Sample document 2 may already exist"
+        echo "E5 setup completed!"
         
-        curl -k -u elastic:${ELASTIC_PASSWORD} -X POST "https://elasticsearch:9200/semantic_documents/_doc/3" \
-          -H "Content-Type: application/json" \
-          -d "{
-            \"title\": \"Environmental Sustainability Solutions\",
-            \"content\": \"Renewable energy sources like solar and wind power are crucial for combating climate change. Green technology innovations include electric vehicles, energy-efficient buildings, and carbon capture systems.\",
-            \"content_semantic\": \"Renewable energy sources like solar and wind power are crucial for combating climate change. Green technology innovations include electric vehicles, energy-efficient buildings, and carbon capture systems.\",
-            \"author\": \"Environmental Scientist\",
-            \"created_date\": \"2025-07-02\",
-            \"tags\": [\"environment\", \"renewable energy\", \"sustainability\", \"climate\"]
-          }" || echo "Sample document 3 may already exist"
+        echo "Waiting for FSCrawler to start indexing documents..."
+        sleep 30
         
-        curl -k -u elastic:${ELASTIC_PASSWORD} -X POST "https://elasticsearch:9200/semantic_documents/_doc/4" \
-          -H "Content-Type: application/json" \
-          -d "{
-            \"title\": \"Remote Work and Digital Collaboration\",
-            \"content\": \"The pandemic accelerated the adoption of remote work technologies. Video conferencing, cloud collaboration tools, and virtual reality meetings are changing how teams communicate and work together across distances.\",
-            \"content_semantic\": \"The pandemic accelerated the adoption of remote work technologies. Video conferencing, cloud collaboration tools, and virtual reality meetings are changing how teams communicate and work together across distances.\",
-            \"author\": \"Workplace Expert\",
-            \"created_date\": \"2025-07-02\",
-            \"tags\": [\"remote work\", \"collaboration\", \"technology\", \"communication\"]
-          }" || echo "Sample document 4 may already exist"
-        
-        echo "E5 setup and sample data indexing completed!"
-        
-        echo "Testing semantic search..."
+        echo "Testing semantic search functionality..."
         curl -k -u elastic:${ELASTIC_PASSWORD} -X POST "https://elasticsearch:9200/semantic_documents/_search?pretty" \
           -H "Content-Type: application/json" \
           -d "{
             \"query\": {
-              \"semantic\": {
-                \"field\": \"content_semantic\",
-                \"query\": \"medical diagnosis and treatment\"
-              }
+              \"match_all\": {}
             },
             \"size\": 1
           }"
@@ -272,6 +284,8 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
+      e5-setup:
+        condition: service_completed_successfully
     ports:
       - ${FSCRAWLER_PORT}:8080
     command: idx --restart --rest
