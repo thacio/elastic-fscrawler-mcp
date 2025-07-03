@@ -1,13 +1,25 @@
 ---
 name: "idx"
 fs:
+  url: "/tmp/es"
+  update_rate: "5m"
   indexed_chars: 100%
   lang_detect: true
   continue_on_error: true
+  remove_deleted: true
+  add_filesize: true
   ocr:
     language: "por"
     enabled: true
     pdf_strategy: "ocr_and_text"
+  includes:
+    - "**/*"
+  excludes:
+    - "*/~*"
+    - "**/README.txt"
+    - "**/readme.txt"
+    - "**/README.md"
+    - "**/readme.md"
 elasticsearch:
   nodes:
     - url: "https://elasticsearch:9200"
