@@ -17,7 +17,7 @@ goto :usage
 REM Traditional search with optional highlighting
 set QUERY=%~2
 set INDEX=%3
-if "%INDEX%"=="" set INDEX=idx
+if "%INDEX%"=="" set INDEX=semantic_documents
 set SIZE=%4
 if "%SIZE%"=="" set SIZE=10
 set HIGHLIGHT=%5
@@ -33,7 +33,7 @@ if "%HIGHLIGHT%"=="true" (
     set HIGHLIGHT_JSON=
 )
 
-curl -k -u "%ES_USER%:%ES_PASS%" -X POST "%ES_HOST%/%INDEX%/_search?pretty" -H "Content-Type: application/json" -d "{\"query\": {\"multi_match\": {\"query\": \"%QUERY%\", \"fields\": [\"content\", \"title\", \"file.filename\"]}}%HIGHLIGHT_JSON%, \"_source\": [\"title\", \"file.filename\", \"file.last_modified\", \"path.real\"], \"size\": %SIZE%}"
+curl -k -u "%ES_USER%:%ES_PASS%" -X POST "%ES_HOST%/%INDEX%/_search?pretty" -H "Content-Type: application/json" -d "{\"query\": {\"multi_match\": {\"query\": \"%QUERY%\", \"fields\": [\"content\", \"title\", \"file.filename\"]}}%HIGHLIGHT_JSON%, \"_source\": [\"title\", \"content\", \"file.filename\", \"file.last_modified\", \"path.real\", \"path.virtual\"], \"size\": %SIZE%}"
 goto :end
 
 :semantic_search
@@ -56,13 +56,13 @@ if "%HIGHLIGHT%"=="true" (
     set HIGHLIGHT_JSON=
 )
 
-curl -k -u "%ES_USER%:%ES_PASS%" -X POST "%ES_HOST%/%INDEX%/_search?pretty" -H "Content-Type: application/json" -d "{\"query\": {\"semantic\": {\"field\": \"content_semantic\", \"query\": \"%QUERY%\"}}%HIGHLIGHT_JSON%, \"_source\": [\"title\", \"author\", \"created_date\", \"tags\", \"file.filename\", \"file.last_modified\", \"path.real\"], \"size\": %SIZE%}"
+curl -k -u "%ES_USER%:%ES_PASS%" -X POST "%ES_HOST%/%INDEX%/_search?pretty" -H "Content-Type: application/json" -d "{\"query\": {\"semantic\": {\"field\": \"content_semantic\", \"query\": \"%QUERY%\"}}%HIGHLIGHT_JSON%, \"_source\": [\"title\", \"content\", \"content_semantic\", \"author\", \"created_date\", \"tags\", \"file.filename\", \"file.last_modified\", \"path.real\", \"path.virtual\"], \"size\": %SIZE%}"
 goto :end
 
 :count
 REM Document count
 set INDEX=%2
-if "%INDEX%"=="" set INDEX=idx
+if "%INDEX%"=="" set INDEX=semantic_documents
 
 curl -k -u "%ES_USER%:%ES_PASS%" "%ES_HOST%/%INDEX%/_count?pretty"
 goto :end
@@ -76,10 +76,11 @@ goto :end
 echo Usage: %0 {search^|semantic_search^|count^|indices} ^<query^> [index] [size] [highlight] [fragment_size] [num_fragments]
 echo Examples:
 echo   %0 search "contract agreement"
-echo   %0 search "legal documents" idx 5 true 200 2
+echo   %0 search "elementos" semantic_documents 5 true 200 2
+echo   %0 search "legal documents" semantic_documents 5 true 200 2
 echo   %0 semantic_search "legal documents"
 echo   %0 semantic_search "auditoria dados" semantic_documents 10 true
-echo   %0 count idx
+echo   %0 count semantic_documents
 echo   %0 indices
 echo.
 echo Search Parameters:

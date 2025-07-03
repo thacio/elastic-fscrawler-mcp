@@ -12,7 +12,7 @@ case "$1" in
   "search")
     # Traditional search with optional highlighting
     QUERY="$2"
-    INDEX="${3:-idx}"
+    INDEX="${3:-semantic_documents}"
     SIZE="${4:-10}"
     HIGHLIGHT="${5:-false}"
     FRAGMENT_SIZE="${6:-300}"
@@ -43,7 +43,7 @@ case "$1" in
             \"fields\": [\"content\", \"title\", \"file.filename\"]
           }
         }$HIGHLIGHT_JSON,
-        \"_source\": [\"title\", \"file.filename\", \"file.last_modified\", \"path.real\"],
+        \"_source\": [\"title\", \"content\", \"file.filename\", \"file.last_modified\", \"path.real\", \"path.virtual\"],
         \"size\": $SIZE
       }"
     ;;
@@ -82,14 +82,14 @@ case "$1" in
             \"query\": \"$QUERY\"
           }
         }$HIGHLIGHT_JSON,
-        \"_source\": [\"title\", \"author\", \"created_date\", \"tags\", \"file.filename\", \"file.last_modified\", \"path.real\"],
+        \"_source\": [\"title\", \"content\", \"content_semantic\", \"author\", \"created_date\", \"tags\", \"file.filename\", \"file.last_modified\", \"path.real\", \"path.virtual\"],
         \"size\": $SIZE
       }"
     ;;
     
   "count")
     # Document count
-    INDEX="${2:-idx}"
+    INDEX="${2:-semantic_documents}"
     
     curl -k -u "$ES_USER:$ES_PASS" \
       "$ES_HOST/$INDEX/_count?pretty"
@@ -105,10 +105,11 @@ case "$1" in
     echo "Usage: $0 {search|semantic_search|count|indices} <query> [index] [size] [highlight] [fragment_size] [num_fragments]"
     echo "Examples:"
     echo "  $0 search 'contract agreement'"
-    echo "  $0 search 'legal documents' idx 5 true 200 2"
+  echo "  $0 search 'elementos' semantic_documents 5 true 200 2"
+    echo "  $0 search 'legal documents' semantic_documents 5 true 200 2"
     echo "  $0 semantic_search 'legal documents'"
     echo "  $0 semantic_search 'auditoria dados' semantic_documents 10 true"
-    echo "  $0 count idx"
+    echo "  $0 count semantic_documents"
     echo "  $0 indices"
     echo ""
     echo "Search Parameters:"

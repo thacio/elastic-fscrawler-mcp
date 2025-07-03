@@ -59,10 +59,16 @@ This folder contains MCP server configurations to use Elasticsearch search and P
 ## Available Tools
 
 ### Elasticsearch Tools:
-- **search** - Traditional keyword search with highlighted fragments
-- **semantic_search** - AI-powered semantic search using E5 model with fragments
-- **count** - Get document count for an index
+- **search** - Traditional keyword search on `semantic_documents` index with highlighted fragments
+- **semantic_search** - AI-powered semantic search using E5 model on `semantic_documents` index with fragments
+- **count** - Get document count for an index (defaults to `semantic_documents`)
 - **indices** - List all available indices
+
+### Unified Index Architecture:
+- Both search types use the same `semantic_documents` index
+- Normal search queries the `content` field for keyword matching
+- Semantic search queries the `content_semantic` field for AI-powered contextual search
+- Single FSCrawler processes documents for both search types automatically
 
 ### New Fragment-Based Search Features:
 - Returns relevant text fragments instead of entire documents
@@ -83,11 +89,17 @@ This folder contains MCP server configurations to use Elasticsearch search and P
 # Basic search with default fragments
 ./elasticsearch-mcp.sh search "contract agreement"
 
-# Custom fragment settings (query, index, size, fragment_size, num_fragments)
-./elasticsearch-mcp.sh search "legal documents" idx 5 200 2
+# Custom fragment settings (query, index, size, highlight, fragment_size, num_fragments)
+./elasticsearch-mcp.sh search "elementos" semantic_documents 5 true 200 2
 
-# Semantic search
-./elasticsearch-mcp.sh semantic_search "legal documents"
+# Normal search with highlighting
+./elasticsearch-mcp.sh search "auditoria" semantic_documents 10 true
+
+# Semantic search for concepts
+./elasticsearch-mcp.sh semantic_search "documentos sobre auditoria e evidências"
+
+# Semantic search with highlighting
+./elasticsearch-mcp.sh semantic_search "relatórios de compliance" semantic_documents 10 true
 
 # Other operations
 ./elasticsearch-mcp.sh count
@@ -99,11 +111,17 @@ This folder contains MCP server configurations to use Elasticsearch search and P
 REM Basic search with default fragments
 elasticsearch-mcp.bat search "contract agreement"
 
-REM Custom fragment settings (query, index, size, fragment_size, num_fragments)
-elasticsearch-mcp.bat search "legal documents" idx 5 200 2
+REM Custom fragment settings (query, index, size, highlight, fragment_size, num_fragments)
+elasticsearch-mcp.bat search "elementos" semantic_documents 5 true 200 2
 
-REM Semantic search
-elasticsearch-mcp.bat semantic_search "legal documents"
+REM Normal search with highlighting
+elasticsearch-mcp.bat search "auditoria" semantic_documents 10 true
+
+REM Semantic search for concepts
+elasticsearch-mcp.bat semantic_search "documentos sobre auditoria e evidências"
+
+REM Semantic search with highlighting
+elasticsearch-mcp.bat semantic_search "relatórios de compliance" semantic_documents 10 true
 
 REM Other operations
 elasticsearch-mcp.bat count
@@ -132,10 +150,11 @@ You can customize Elasticsearch connection by setting:
 ## Usage with Gemini CLI
 
 Once configured, you can ask Gemini CLI to:
-- "Search my documents for contracts about legal agreements" (returns relevant fragments)
-- "Find documents semantically related to artificial intelligence" (fragment-based results)
-- "Search for 'project management' but show me only short excerpts"
-- "Count how many documents are in my index"
+- "Search my documents for elementos comprobatórios" (normal keyword search with fragments)
+- "Find documents semantically related to auditoria e evidências" (AI-powered semantic search)
+- "Search for 'relatórios' but show me only highlighted excerpts" (fragment-based results)
+- "Count how many documents are in the semantic_documents index"
+- "Search both ways - normal and semantic - for compliance documents" (dual search approach)
 - "Write and run a Python script to calculate the average of these numbers: [1,2,3,4,5]"
 - "Execute this Python code: print('Hello World')"
 
@@ -156,6 +175,38 @@ semantic_search "query" [index] [size] [fragment_size] [num_fragments]
 ```
 
 ### Performance Optimizations:
-- Limited document indexing to 500KB per file (configurable)
-- Added term vectors and offsets for faster highlighting
-- Only essential metadata returned in search results
+- Automatic recursive document processing from `elastic_documents/` folder
+- OCR support for image-based PDFs and scanned documents
+- Real-time indexing with subdirectory support
+- README files automatically excluded from indexing
+- Single index architecture supports both search types efficiently
+
+## ✅ Verified Setup
+
+### Current Configuration:
+- **Index**: `semantic_documents` (unified for both search types)
+- **Document Location**: `../elastic_documents/` (auto-monitored by FSCrawler)
+- **Search Types**: Normal keyword search + AI semantic search
+- **File Support**: PDF, TXT, DOC, DOCX with OCR capabilities
+- **Subdirectories**: Fully supported with recursive crawling
+- **Exclusions**: README files automatically excluded
+
+### Working Features:
+✅ **Normal Search**: Traditional keyword matching with highlighting  
+✅ **Semantic Search**: AI-powered contextual search using E5 model  
+✅ **Automatic Indexing**: Files added to folder are auto-processed  
+✅ **Subdirectory Support**: Files in folders like `racom_cpf_pecas/` are indexed  
+✅ **Dual Fields**: Same documents available for both search approaches  
+✅ **Real-time Processing**: New documents available within minutes  
+
+### Example Usage:
+```bash
+# Normal search for exact keywords
+./elasticsearch-mcp.sh search "elementos comprobatórios" semantic_documents 5 true
+
+# Semantic search for concepts and meaning
+./elasticsearch-mcp.sh semantic_search "documentos de auditoria e evidências" semantic_documents 5 true
+
+# Check total document count
+./elasticsearch-mcp.sh count semantic_documents
+```
