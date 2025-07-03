@@ -4,20 +4,18 @@ A complete document search solution with automatic document crawling, OCR proces
 
 ## Features
 
-🔍 **Full-Text Search**
-- Traditional keyword-based search across all document content
-- Advanced query syntax support
-- Real-time search results
+🔍 **Dual Search Capabilities**
+- **Normal Search**: Traditional keyword-based search with highlighting
+- **Semantic Search**: AI-powered contextual search using E5 multilingual model
+- **Single Index**: Both search types work on the same `semantic_documents` index
+- **Real-time Results**: Instant search across all document content
 
-🤖 **AI-Powered Semantic Search**
-- Natural language queries using E5 multilingual model
-- Context-aware search results
-- Understands meaning, not just keywords
-
-📄 **Document Processing**
-- Automatic file monitoring and indexing
-- OCR support for image-based PDFs and scanned documents
-- Support for PDF, DOC, DOCX, TXT, HTML, RTF, ODT and more
+📄 **Automatic Document Processing**
+- **Single FSCrawler**: One instance handles all document processing
+- **Auto-Detection**: Monitors `elastic_documents/` folder for new files
+- **OCR Enabled**: Processes image-based PDFs and scanned documents
+- **Dual Indexing**: Creates both normal and semantic search fields automatically
+- **File Formats**: PDF, DOC, DOCX, TXT, HTML, RTF, ODT and more
 
 🚀 **Fully Automated Setup**
 - Zero-configuration deployment
@@ -60,18 +58,26 @@ Simply add any documents to the `elastic_documents/` folder:
 
 ```bash
 cp your-document.pdf elastic_documents/
-# FSCrawler will automatically detect and index it within 15 minutes
+# FSCrawler automatically detects and indexes for BOTH search types
+# Available for normal AND semantic search within minutes
 ```
 
 ### 4. Search Your Documents
 
-**Traditional Search:**
+**Normal Search (Keyword-based):**
 ```bash
-curl -k -u elastic:changeme "https://localhost:9200/idx/_search?q=your+search+terms&pretty"
+# Search with keywords and highlighting
+curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search?pretty" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": {"match": {"content": "your search terms"}},
+    "highlight": {"fields": {"content": {}}}
+  }'
 ```
 
-**Semantic Search:**
+**Semantic Search (AI-powered):**
 ```bash
+# Search with natural language concepts
 curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search?pretty" \
   -H "Content-Type: application/json" \
   -d '{
@@ -105,11 +111,15 @@ curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_
 ### Document Flow
 
 ```
-Documents → elastic_documents/ → FSCrawler → Elasticsearch → Search API
+Documents → elastic_documents/ → FSCrawler → semantic_documents index
+                                     ↓              ↓
+                                OCR Processing    Dual Fields:
+                                     ↓              ├── content (normal search)
+                               Text Extraction     └── content_semantic (AI search)
                                      ↓
-                                OCR Processing
+                              E5 Pipeline Processing
                                      ↓
-                               Text Extraction
+                            Both Search Types Available
 ```
 
 ## Access Information
@@ -141,14 +151,16 @@ curl -X POST "http://localhost:8080/fscrawler/_start"
 
 ### Search Examples
 
-**Basic keyword search:**
+**Normal keyword search:**
 ```bash
-curl -k -u elastic:changeme "https://localhost:9200/idx/_search?q=contract&pretty"
+curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search?pretty" \
+  -H "Content-Type: application/json" \
+  -d '{"query": {"match": {"content": "contract"}}}'
 ```
 
 **Search with filters:**
 ```bash
-curl -k -u elastic:changeme -X POST "https://localhost:9200/idx/_search?pretty" \
+curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search?pretty" \
   -H "Content-Type: application/json" \
   -d '{
     "query": {
@@ -178,14 +190,14 @@ curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_
 
 **Delete all documents:**
 ```bash
-curl -k -u elastic:changeme -X POST "https://localhost:9200/idx/_delete_by_query" \
+curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_delete_by_query" \
   -H "Content-Type: application/json" \
   -d '{"query": {"match_all": {}}}'
 ```
 
 **Count indexed documents:**
 ```bash
-curl -k -u elastic:changeme "https://localhost:9200/idx/_count?pretty"
+curl -k -u elastic:changeme "https://localhost:9200/semantic_documents/_count?pretty"
 ```
 
 ## Configuration
@@ -210,6 +222,9 @@ elasticsearch:
   username: "elastic"
   password: "changeme"
   ssl_verification: false
+  index: "semantic_documents"  # Single index for both search types
+  type: "_doc"
+  pipeline: "semantic_documents_pipeline"  # Auto-creates semantic field
 ```
 
 ### Environment Variables

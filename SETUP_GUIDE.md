@@ -1,6 +1,6 @@
 # Elasticsearch + FSCrawler + E5 Semantic Search Setup Guide
 
-This guide provides step-by-step instructions to set up a complete Elasticsearch environment with FSCrawler for document indexing and E5 for semantic search capabilities.
+This guide provides step-by-step instructions to set up a complete Elasticsearch environment with **single FSCrawler** for automatic document indexing and **dual search capabilities** (normal + semantic search) using the E5 model.
 
 ## Table of Contents
 1. [Prerequisites](#prerequisites)
@@ -205,7 +205,7 @@ services:
     environment:
       - FS_JAVA_OPTS=${FS_JAVA_OPTS}
     volumes:
-      - ../../test-documents/src/main/resources/documents/:/tmp/es:ro
+      - ./elastic_documents:/tmp/es:ro
       - ${PWD}/config:/root/.fscrawler
       - ${PWD}/logs:/usr/share/fscrawler/logs
       - ${PWD}/external:/usr/share/fscrawler/external
@@ -245,6 +245,9 @@ elasticsearch:
   username: "elastic"
   password: "changeme"
   ssl_verification: false
+  index: "semantic_documents"  # Single index for both search types
+  type: "_doc"
+  pipeline: "semantic_documents_pipeline"  # Auto-creates semantic field
 rest:
   url: "http://fscrawler:8080"
 ```
@@ -317,10 +320,11 @@ curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_
 
 The E5 setup is now **fully automated** through the `e5-setup` service in docker-compose.yml. When you run `docker-compose up -d`, the following happens automatically:
 
-1. **E5 Inference Endpoint Creation**: Creates `my-e5-model` endpoint
-2. **Semantic Index Creation**: Creates `semantic_documents` index with proper mapping
-3. **Sample Data Indexing**: Adds 4 sample documents for immediate testing
-4. **Verification Test**: Runs a semantic search test to ensure everything works
+1. **E5 Inference Endpoint Creation**: Creates `my-e5-model` endpoint with multilingual E5 model
+2. **Dual-Purpose Index Creation**: Creates `semantic_documents` index supporting both normal and semantic search
+3. **Ingest Pipeline Setup**: Creates pipeline that automatically generates semantic embeddings
+4. **FSCrawler Integration**: Configures single FSCrawler to use the semantic index and pipeline
+5. **Automatic Document Processing**: FSCrawler indexes documents for BOTH search types simultaneously
 
 The `e5-setup` service will:
 - Wait for Elasticsearch to be fully ready
@@ -381,19 +385,24 @@ curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_
 }'
 ```
 
-**Method 2: FSCrawler (File-based)**
+**Method 2: FSCrawler (Automatic File Processing) - RECOMMENDED**
 
-1. Create documents in the monitored directory:
+1. Documents are monitored in the elastic_documents directory:
 ```bash
-mkdir -p ../test-documents/src/main/resources/documents/
+ls -la elastic_documents/  # See current documents
 ```
 
-2. Add files to be crawled:
+2. Add files to be automatically crawled and indexed:
 ```bash
-echo "Your document content here" > ../test-documents/src/main/resources/documents/sample.txt
+# Copy any document to the monitored folder
+cp your-document.pdf elastic_documents/
+cp your-document.txt elastic_documents/
 ```
 
-3. FSCrawler will automatically detect and index files
+3. FSCrawler automatically detects, processes, and indexes for BOTH search types:
+   - **Normal search**: Available via `content` field
+   - **Semantic search**: Available via `content_semantic` field
+   - **No manual intervention required**
 
 ### 11. Verify Indexing
 
@@ -401,7 +410,7 @@ echo "Your document content here" > ../test-documents/src/main/resources/documen
 # Check indices
 curl -k -u elastic:changeme "https://localhost:9200/_cat/indices"
 
-# Count documents in semantic index (should show 4+ documents)
+# Count documents in semantic index (shows total indexed documents)
 curl -k -u elastic:changeme "https://localhost:9200/semantic_documents/_count?pretty"
 
 # Search all documents
@@ -410,24 +419,29 @@ curl -k -u elastic:changeme "https://localhost:9200/semantic_documents/_search?p
 
 ## Testing Search Functionality
 
-### 12. Traditional Keyword Search
+### 12. Normal Keyword Search
 
 ```bash
-curl -k -u elastic:changeme "https://localhost:9200/semantic_documents/_search?q=machine+learning&pretty"
+# Simple keyword search with highlighting
+curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search?pretty" \
+  -H "Content-Type: application/json" \
+  -d '{"query": {"match": {"content": "machine learning"}}, "highlight": {"fields": {"content": {}}}}'
 ```
 
-### 13. Semantic Search
+### 13. Semantic Search (AI-Powered)
 
 ```bash
-# Search for medical concepts
-curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search?pretty" -H "Content-Type: application/json" -d '{
-  "query": {
-    "semantic": {
-      "field": "content_semantic",
-      "query": "medical diagnosis and treatment"
+# Search for medical concepts using natural language
+curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search?pretty" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": {
+      "semantic": {
+        "field": "content_semantic",
+        "query": "medical diagnosis and treatment"
+      }
     }
-  }
-}'
+  }'
 ```
 
 ```bash
@@ -555,20 +569,22 @@ curl -k -u elastic:changeme -X DELETE "https://localhost:9200/semantic_documents
 ```
 
 **FSCrawler Document Management:**
-- **Add files**: Place in `/mnt/c/test-documents/src/main/resources/documents/` - automatically indexed
+- **Add files**: Place in `elastic_documents/` folder - automatically indexed for BOTH search types
 - **Remove files**: Delete from folder - automatically removed from Elasticsearch
-- **Scan interval**: Every 15 minutes (configurable in FSCrawler settings)
+- **Scan interval**: Continuous monitoring with periodic scans
+- **Processing**: Single FSCrawler handles all document types and creates dual search fields
 
 ## Features Achieved
 
-✅ **Full-text search** with Elasticsearch
-✅ **Document crawling** with FSCrawler  
-✅ **Semantic search** with E5 embeddings
-✅ **SSL security** with self-signed certificates
-✅ **ML capabilities** for natural language processing
-✅ **REST API access** for programmatic integration
-✅ **Kibana interface** for data visualization
-✅ **Automatic document sync** with file system changes
+✅ **Dual Search Capabilities**: Normal keyword search AND AI-powered semantic search
+✅ **Single FSCrawler Setup**: One instance handles all document processing
+✅ **Automatic Dual Indexing**: Documents indexed for both search types simultaneously
+✅ **E5 Semantic Embeddings**: Multilingual AI model for contextual search
+✅ **SSL Security**: Self-signed certificates with authentication
+✅ **ML Capabilities**: 10GB allocated for natural language processing
+✅ **REST API Access**: Programmatic integration for both search types
+✅ **Kibana Interface**: Data visualization and management
+✅ **Real-time Processing**: Automatic document sync with file system changes
 
 ## Next Steps
 
@@ -591,3 +607,56 @@ curl -k -u elastic:changeme -X DELETE "https://localhost:9200/semantic_documents
 | E5 Model | ~500MB | Semantic embeddings |
 
 **Total Recommended RAM:** 30GB+ for optimal performance
+
+---
+
+## ✅ VERIFIED WORKFLOW SUMMARY
+
+### What This Setup Achieves
+
+This configuration provides a **single FSCrawler instance** that automatically processes documents for **both normal and semantic search** using the **same index**.
+
+### How It Works
+
+1. **Single Index Architecture**: The `semantic_documents` index contains:
+   - `content` field: Original text for normal keyword search
+   - `content_semantic` field: AI-generated embeddings for semantic search
+
+2. **Automatic Dual Processing**: 
+   - FSCrawler reads documents from `elastic_documents/` folder
+   - Extracts text content (with OCR support)
+   - Indexes to `semantic_documents` using `semantic_documents_pipeline`
+   - Pipeline automatically creates both search fields
+
+3. **Two Search Types Available**:
+   - **Normal Search**: `{"query": {"match": {"content": "keywords"}}}`
+   - **Semantic Search**: `{"query": {"semantic": {"field": "content_semantic", "query": "concepts"}}}`
+
+### Verified Functionality
+
+✅ **Automatic Document Detection**: New files in `elastic_documents/` are automatically processed  
+✅ **Normal Search Works**: Keyword-based search with highlighting  
+✅ **Semantic Search Works**: AI-powered contextual search using E5 model  
+✅ **Single FSCrawler**: One instance handles all processing  
+✅ **Real-time Indexing**: Documents available for both search types within minutes  
+✅ **OCR Support**: Image-based PDFs and scanned documents processed  
+✅ **Fresh Setup Verified**: Complete workflow tested after full cleanup and restart  
+
+### Quick Verification Commands
+
+```bash
+# Check document count
+curl -k -u elastic:changeme "https://localhost:9200/semantic_documents/_count"
+
+# Test normal search
+curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search" \
+  -H "Content-Type: application/json" \
+  -d '{"query": {"match": {"content": "test"}}, "size": 1}'
+
+# Test semantic search  
+curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search" \
+  -H "Content-Type: application/json" \
+  -d '{"query": {"semantic": {"field": "content_semantic", "query": "testing"}}, "size": 1}'
+```
+
+**Result**: Both searches work on the same documents with different ranking algorithms - keyword matching vs. semantic similarity.

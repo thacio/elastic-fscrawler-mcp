@@ -12,7 +12,11 @@
       "Bash(./verify-setup.sh:*)",
       "Bash(rm:*)",
       "Bash(find:*)",
-      "Bash(./elasticsearch-mcp.sh:*)"
+      "Bash(./elasticsearch-mcp.sh:*)",
+      "Bash(docker run:*)",
+      "Bash(docker start:*)",
+      "Bash(docker restart:*)",
+      "Bash(echo:*)"
     ],
     "deny": []
   }
