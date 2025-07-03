@@ -10,20 +10,45 @@ ES_PASS="${ES_PASS:-changeme}"
 
 case "$1" in
   "search")
-    # Traditional search
+    # Traditional search with highlighting
     QUERY="$2"
     INDEX="${3:-idx}"
     SIZE="${4:-10}"
+    FRAGMENT_SIZE="${5:-300}"
+    NUM_FRAGMENTS="${6:-3}"
     
     curl -k -u "$ES_USER:$ES_PASS" \
-      "$ES_HOST/$INDEX/_search?q=$QUERY&size=$SIZE&pretty"
+      -X POST "$ES_HOST/$INDEX/_search?pretty" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"query\": {
+          \"multi_match\": {
+            \"query\": \"$QUERY\",
+            \"fields\": [\"content\", \"title\", \"file.filename\"]
+          }
+        },
+        \"highlight\": {
+          \"fields\": {
+            \"content\": {
+              \"fragment_size\": $FRAGMENT_SIZE,
+              \"number_of_fragments\": $NUM_FRAGMENTS,
+              \"pre_tags\": [\"<mark>\"],
+              \"post_tags\": [\"</mark>\"]
+            }
+          }
+        },
+        \"_source\": [\"title\", \"file.filename\", \"file.last_modified\", \"path.real\"],
+        \"size\": $SIZE
+      }"
     ;;
     
   "semantic_search")
-    # Semantic search
+    # Semantic search with highlighting
     QUERY="$2"
     INDEX="${3:-semantic_documents}"
     SIZE="${4:-10}"
+    FRAGMENT_SIZE="${5:-300}"
+    NUM_FRAGMENTS="${6:-3}"
     
     curl -k -u "$ES_USER:$ES_PASS" \
       -X POST "$ES_HOST/$INDEX/_search?pretty" \
@@ -35,6 +60,17 @@ case "$1" in
             \"query\": \"$QUERY\"
           }
         },
+        \"highlight\": {
+          \"fields\": {
+            \"content\": {
+              \"fragment_size\": $FRAGMENT_SIZE,
+              \"number_of_fragments\": $NUM_FRAGMENTS,
+              \"pre_tags\": [\"<mark>\"],
+              \"post_tags\": [\"</mark>\"]
+            }
+          }
+        },
+        \"_source\": [\"title\", \"author\", \"created_date\", \"tags\"],
         \"size\": $SIZE
       }"
     ;;
@@ -54,12 +90,17 @@ case "$1" in
     ;;
     
   *)
-    echo "Usage: $0 {search|semantic_search|count|indices} <query> [index] [size]"
+    echo "Usage: $0 {search|semantic_search|count|indices} <query> [index] [size] [fragment_size] [num_fragments]"
     echo "Examples:"
     echo "  $0 search 'contract agreement'"
+    echo "  $0 search 'legal documents' idx 5 200 2"
     echo "  $0 semantic_search 'legal documents'"
     echo "  $0 count idx"
     echo "  $0 indices"
+    echo ""
+    echo "Search Parameters:"
+    echo "  fragment_size: Characters per highlighted fragment (default: 300)"
+    echo "  num_fragments: Number of fragments to return (default: 3)"
     exit 1
     ;;
 esac

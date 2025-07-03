@@ -162,7 +162,7 @@ services:
         echo "Waiting for E5 model to be ready..."
         sleep 60
         
-        echo "Creating semantic documents index..."
+        echo "Creating semantic documents index with optimized highlighting..."
         curl -k -u elastic:${ELASTIC_PASSWORD} -X PUT "https://elasticsearch:9200/semantic_documents" \
           -H "Content-Type: application/json" \
           -d "{
@@ -172,7 +172,9 @@ services:
                   \"type\": \"text\"
                 },
                 \"content\": {
-                  \"type\": \"text\"
+                  \"type\": \"text\",
+                  \"index_options\": \"offsets\",
+                  \"term_vector\": \"with_positions_offsets\"
                 },
                 \"content_semantic\": {
                   \"type\": \"semantic_text\",
