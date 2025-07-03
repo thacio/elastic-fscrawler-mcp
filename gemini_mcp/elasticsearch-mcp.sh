@@ -13,10 +13,10 @@ case "$1" in
     # Traditional search with optional highlighting
     QUERY="$2"
     INDEX="${3:-semantic_documents}"
-    SIZE="${4:-10}"
-    HIGHLIGHT="${5:-false}"
-    FRAGMENT_SIZE="${6:-300}"
-    NUM_FRAGMENTS="${7:-3}"
+    SIZE="${4:-5}"
+    HIGHLIGHT="${5:-true}"
+    FRAGMENT_SIZE="${6:-600}"
+    NUM_FRAGMENTS="${7:-5}"
     
     if [ "$HIGHLIGHT" = "true" ]; then
       HIGHLIGHT_JSON=", \"highlight\": {
@@ -24,13 +24,15 @@ case "$1" in
             \"content\": {
               \"fragment_size\": $FRAGMENT_SIZE,
               \"number_of_fragments\": $NUM_FRAGMENTS,
-              \"pre_tags\": [\"<mark>\"],
-              \"post_tags\": [\"</mark>\"]
+              \"pre_tags\": [\"\"],
+              \"post_tags\": [\"\"]
             }
           }
         }"
+      SOURCE_FIELDS="[\"title\", \"file.filename\", \"file.last_modified\", \"path.real\", \"path.virtual\"]"
     else
       HIGHLIGHT_JSON=""
+      SOURCE_FIELDS="[\"title\", \"content\", \"file.filename\", \"file.last_modified\", \"path.real\", \"path.virtual\"]"
     fi
     
     curl -k -u "$ES_USER:$ES_PASS" \
@@ -43,7 +45,7 @@ case "$1" in
             \"fields\": [\"content\", \"title\", \"file.filename\"]
           }
         }$HIGHLIGHT_JSON,
-        \"_source\": [\"title\", \"content\", \"file.filename\", \"file.last_modified\", \"path.real\", \"path.virtual\"],
+        \"_source\": $SOURCE_FIELDS,
         \"size\": $SIZE
       }"
     ;;
@@ -52,10 +54,10 @@ case "$1" in
     # Semantic search with optional highlighting
     QUERY="$2"
     INDEX="${3:-semantic_documents}"
-    SIZE="${4:-10}"
-    HIGHLIGHT="${5:-false}"
-    FRAGMENT_SIZE="${6:-300}"
-    NUM_FRAGMENTS="${7:-3}"
+    SIZE="${4:-5}"
+    HIGHLIGHT="${5:-true}"
+    FRAGMENT_SIZE="${6:-600}"
+    NUM_FRAGMENTS="${7:-5}"
     
     if [ "$HIGHLIGHT" = "true" ]; then
       HIGHLIGHT_JSON=", \"highlight\": {
@@ -63,28 +65,61 @@ case "$1" in
             \"content\": {
               \"fragment_size\": $FRAGMENT_SIZE,
               \"number_of_fragments\": $NUM_FRAGMENTS,
-              \"pre_tags\": [\"<mark>\"],
-              \"post_tags\": [\"</mark>\"]
+              \"pre_tags\": [\"\"],
+              \"post_tags\": [\"\"]
             }
           }
         }"
+      SOURCE_FIELDS="[\"title\", \"author\", \"created_date\", \"tags\", \"file.filename\", \"file.last_modified\", \"path.real\", \"path.virtual\"]"
     else
       HIGHLIGHT_JSON=""
+      SOURCE_FIELDS="[\"title\", \"content\", \"content_semantic\", \"author\", \"created_date\", \"tags\", \"file.filename\", \"file.last_modified\", \"path.real\", \"path.virtual\"]"
     fi
     
-    curl -k -u "$ES_USER:$ES_PASS" \
-      -X POST "$ES_HOST/$INDEX/_search?pretty" \
-      -H "Content-Type: application/json" \
-      -d "{
-        \"query\": {
-          \"semantic\": {
-            \"field\": \"content_semantic\",
-            \"query\": \"$QUERY\"
-          }
-        }$HIGHLIGHT_JSON,
-        \"_source\": [\"title\", \"content\", \"content_semantic\", \"author\", \"created_date\", \"tags\", \"file.filename\", \"file.last_modified\", \"path.real\", \"path.virtual\"],
-        \"size\": $SIZE
-      }"
+    if [ "$HIGHLIGHT" = "true" ]; then
+      # For semantic search with highlighting, we need a hybrid approach
+      curl -k -u "$ES_USER:$ES_PASS" \
+        -X POST "$ES_HOST/$INDEX/_search?pretty" \
+        -H "Content-Type: application/json" \
+        -d "{
+          \"query\": {
+            \"bool\": {
+              \"should\": [
+                {
+                  \"semantic\": {
+                    \"field\": \"content_semantic\",
+                    \"query\": \"$QUERY\",
+                    \"boost\": 2.0
+                  }
+                },
+                {
+                  \"multi_match\": {
+                    \"query\": \"$QUERY\",
+                    \"fields\": [\"content\", \"title\"],
+                    \"boost\": 0.5
+                  }
+                }
+              ]
+            }
+          }$HIGHLIGHT_JSON,
+          \"_source\": $SOURCE_FIELDS,
+          \"size\": $SIZE
+        }"
+    else
+      curl -k -u "$ES_USER:$ES_PASS" \
+        -X POST "$ES_HOST/$INDEX/_search?pretty" \
+        -H "Content-Type: application/json" \
+        -d "{
+          \"query\": {
+            \"semantic\": {
+              \"field\": \"content_semantic\",
+              \"query\": \"$QUERY\"
+            }
+          },
+          \"_source\": $SOURCE_FIELDS,
+          \"size\": $SIZE
+        }"
+    fi
     ;;
     
   "count")

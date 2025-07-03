@@ -19,21 +19,23 @@ set QUERY=%~2
 set INDEX=%3
 if "%INDEX%"=="" set INDEX=semantic_documents
 set SIZE=%4
-if "%SIZE%"=="" set SIZE=10
+if "%SIZE%"=="" set SIZE=5
 set HIGHLIGHT=%5
-if "%HIGHLIGHT%"=="" set HIGHLIGHT=false
+if "%HIGHLIGHT%"=="" set HIGHLIGHT=true
 set FRAGMENT_SIZE=%6
-if "%FRAGMENT_SIZE%"=="" set FRAGMENT_SIZE=300
+if "%FRAGMENT_SIZE%"=="" set FRAGMENT_SIZE=600
 set NUM_FRAGMENTS=%7
-if "%NUM_FRAGMENTS%"=="" set NUM_FRAGMENTS=3
+if "%NUM_FRAGMENTS%"=="" set NUM_FRAGMENTS=5
 
 if "%HIGHLIGHT%"=="true" (
-    set HIGHLIGHT_JSON=, \"highlight\": {\"fields\": {\"content\": {\"fragment_size\": %FRAGMENT_SIZE%, \"number_of_fragments\": %NUM_FRAGMENTS%, \"pre_tags\": [\"^<mark^>\"], \"post_tags\": [\"^</mark^>\"]}}}
+    set HIGHLIGHT_JSON=, \"highlight\": {\"fields\": {\"content\": {\"fragment_size\": %FRAGMENT_SIZE%, \"number_of_fragments\": %NUM_FRAGMENTS%, \"pre_tags\": [\"\"], \"post_tags\": [\"\"]}}}
+    set SOURCE_FIELDS=[\"title\", \"file.filename\", \"file.last_modified\", \"path.real\", \"path.virtual\"]
 ) else (
     set HIGHLIGHT_JSON=
+    set SOURCE_FIELDS=[\"title\", \"content\", \"file.filename\", \"file.last_modified\", \"path.real\", \"path.virtual\"]
 )
 
-curl -k -u "%ES_USER%:%ES_PASS%" -X POST "%ES_HOST%/%INDEX%/_search?pretty" -H "Content-Type: application/json" -d "{\"query\": {\"multi_match\": {\"query\": \"%QUERY%\", \"fields\": [\"content\", \"title\", \"file.filename\"]}}%HIGHLIGHT_JSON%, \"_source\": [\"title\", \"content\", \"file.filename\", \"file.last_modified\", \"path.real\", \"path.virtual\"], \"size\": %SIZE%}"
+curl -k -u "%ES_USER%:%ES_PASS%" -X POST "%ES_HOST%/%INDEX%/_search?pretty" -H "Content-Type: application/json" -d "{\"query\": {\"multi_match\": {\"query\": \"%QUERY%\", \"fields\": [\"content\", \"title\", \"file.filename\"]}}%HIGHLIGHT_JSON%, \"_source\": %SOURCE_FIELDS%, \"size\": %SIZE%}"
 goto :end
 
 :semantic_search
@@ -42,21 +44,27 @@ set QUERY=%~2
 set INDEX=%3
 if "%INDEX%"=="" set INDEX=semantic_documents
 set SIZE=%4
-if "%SIZE%"=="" set SIZE=10
+if "%SIZE%"=="" set SIZE=5
 set HIGHLIGHT=%5
-if "%HIGHLIGHT%"=="" set HIGHLIGHT=false
+if "%HIGHLIGHT%"=="" set HIGHLIGHT=true
 set FRAGMENT_SIZE=%6
-if "%FRAGMENT_SIZE%"=="" set FRAGMENT_SIZE=300
+if "%FRAGMENT_SIZE%"=="" set FRAGMENT_SIZE=600
 set NUM_FRAGMENTS=%7
-if "%NUM_FRAGMENTS%"=="" set NUM_FRAGMENTS=3
+if "%NUM_FRAGMENTS%"=="" set NUM_FRAGMENTS=5
 
 if "%HIGHLIGHT%"=="true" (
-    set HIGHLIGHT_JSON=, \"highlight\": {\"fields\": {\"content\": {\"fragment_size\": %FRAGMENT_SIZE%, \"number_of_fragments\": %NUM_FRAGMENTS%, \"pre_tags\": [\"^<mark^>\"], \"post_tags\": [\"^</mark^>\"]}}}
+    set HIGHLIGHT_JSON=, \"highlight\": {\"fields\": {\"content\": {\"fragment_size\": %FRAGMENT_SIZE%, \"number_of_fragments\": %NUM_FRAGMENTS%, \"pre_tags\": [\"\"], \"post_tags\": [\"\"]}}}
+    set SOURCE_FIELDS=[\"title\", \"author\", \"created_date\", \"tags\", \"file.filename\", \"file.last_modified\", \"path.real\", \"path.virtual\"]
 ) else (
     set HIGHLIGHT_JSON=
+    set SOURCE_FIELDS=[\"title\", \"content\", \"content_semantic\", \"author\", \"created_date\", \"tags\", \"file.filename\", \"file.last_modified\", \"path.real\", \"path.virtual\"]
 )
 
-curl -k -u "%ES_USER%:%ES_PASS%" -X POST "%ES_HOST%/%INDEX%/_search?pretty" -H "Content-Type: application/json" -d "{\"query\": {\"semantic\": {\"field\": \"content_semantic\", \"query\": \"%QUERY%\"}}%HIGHLIGHT_JSON%, \"_source\": [\"title\", \"content\", \"content_semantic\", \"author\", \"created_date\", \"tags\", \"file.filename\", \"file.last_modified\", \"path.real\", \"path.virtual\"], \"size\": %SIZE%}"
+if "%HIGHLIGHT%"=="true" (
+    curl -k -u "%ES_USER%:%ES_PASS%" -X POST "%ES_HOST%/%INDEX%/_search?pretty" -H "Content-Type: application/json" -d "{\"query\": {\"bool\": {\"should\": [{\"semantic\": {\"field\": \"content_semantic\", \"query\": \"%QUERY%\", \"boost\": 2.0}}, {\"multi_match\": {\"query\": \"%QUERY%\", \"fields\": [\"content\", \"title\"], \"boost\": 0.5}}]}}%HIGHLIGHT_JSON%, \"_source\": %SOURCE_FIELDS%, \"size\": %SIZE%}"
+) else (
+    curl -k -u "%ES_USER%:%ES_PASS%" -X POST "%ES_HOST%/%INDEX%/_search?pretty" -H "Content-Type: application/json" -d "{\"query\": {\"semantic\": {\"field\": \"content_semantic\", \"query\": \"%QUERY%\"}}, \"_source\": %SOURCE_FIELDS%, \"size\": %SIZE%}"
+)
 goto :end
 
 :count
