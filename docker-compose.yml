@@ -345,7 +345,7 @@ services:
       e5-setup:
         condition: service_completed_successfully
     ports:
-      - "8081:8080"
+      - "9876:8080"
     networks:
       - default
     healthcheck:

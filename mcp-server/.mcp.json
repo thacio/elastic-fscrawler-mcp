@@ -1,0 +1,9 @@
+  {
+    "mcpServers": {
+      "elasticsearch-search": {
+        "transport": "http",
+        "url": "http://localhost:9876/mcp",
+        "timeout": 30000
+      }
+    }
+  }

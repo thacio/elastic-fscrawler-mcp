@@ -44,7 +44,7 @@ docker compose ps
 docker logs mcp-server
 
 # Test MCP server (should return JSON-RPC error about content-type - this is normal)
-curl http://localhost:8081/mcp/
+curl http://localhost:9876/mcp/
 ```
 
 ## Standalone Usage
@@ -64,7 +64,7 @@ The server will start on `http://0.0.0.0:8080/mcp/` by default.
 ## Client Integration
 
 To use this server with an AI agent or MCP client, connect to:
-- **URL**: `http://localhost:8081/mcp/` (when using Docker)
+- **URL**: `http://localhost:9876/mcp/` (when using Docker)
 - **Transport**: HTTP with Server-Sent Events (SSE)
 
 ### Example Client Code
@@ -73,7 +73,7 @@ To use this server with an AI agent or MCP client, connect to:
 from fastmcp import Client
 
 async def main():
-    async with Client("http://localhost:8081/mcp/") as client:
+    async with Client("http://localhost:9876/mcp/") as client:
         # List available tools
         tools = await client.list_tools()
         print("Available tools:", [tool.name for tool in tools])
@@ -169,7 +169,7 @@ curl -k -u elastic:changeme https://localhost:9200/documents/_count
 docker logs mcp-server
 
 # Test MCP server connectivity
-curl -H "Accept: text/event-stream" http://localhost:8081/mcp/
+curl -H "Accept: text/event-stream" http://localhost:9876/mcp/
 ```
 
 ## Security Notes

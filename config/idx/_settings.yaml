@@ -11,7 +11,7 @@ fs:
   ocr:
     language: "por"
     enabled: true
-    pdf_strategy: "ocr_and_text"
+    pdf_strategy: "auto"
   includes:
     - "**/*"
   excludes:
