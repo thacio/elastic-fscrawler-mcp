@@ -20,9 +20,6 @@ fs:
     - "**/readme.txt"
     - "**/README.md"
     - "**/readme.md"
-  thread_pool:
-    size: 16
-    max_size: 30
 elasticsearch:
   nodes:
     - url: "https://elasticsearch:9200"
