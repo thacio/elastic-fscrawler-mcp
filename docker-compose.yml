@@ -162,19 +162,21 @@ services:
         echo "Waiting for E5 model to be ready..."
         sleep 60
         
-        echo "Creating semantic documents index with optimized highlighting..."
+        echo "Creating semantic documents index with hybrid search support..."
         curl -k -u elastic:${ELASTIC_PASSWORD} -X PUT "https://elasticsearch:9200/semantic_documents" \
           -H "Content-Type: application/json" \
           -d "{
             \"mappings\": {
               \"properties\": {
                 \"title\": {
-                  \"type\": \"text\"
+                  \"type\": \"text\",
+                  \"copy_to\": \"content_semantic\"
                 },
                 \"content\": {
                   \"type\": \"text\",
                   \"index_options\": \"offsets\",
-                  \"term_vector\": \"with_positions_offsets\"
+                  \"term_vector\": \"with_positions_offsets\",
+                  \"copy_to\": \"content_semantic\"
                 },
                 \"content_semantic\": {
                   \"type\": \"semantic_text\",
@@ -264,6 +266,43 @@ services:
             },
             \"size\": 1
           }"
+        
+        echo "Creating hybrid search example queries..."
+        echo "Hybrid search is now configured! Use RRF retrievers for hybrid search."
+        echo "Example hybrid search query:"
+        echo "curl -k -u elastic:${ELASTIC_PASSWORD} -X POST \"https://elasticsearch:9200/semantic_documents/_search?pretty\" \\"
+        echo "  -H \"Content-Type: application/json\" \\"
+        echo "  -d \"{\\"
+        echo "    \\\"retriever\\\": {\\"
+        echo "      \\\"rrf\\\": {\\"
+        echo "        \\\"retrievers\\\": [\\"
+        echo "          {\\"
+        echo "            \\\"standard\\\": {\\"
+        echo "              \\\"query\\\": {\\"
+        echo "                \\\"multi_match\\\": {\\"
+        echo "                  \\\"query\\\": \\\"your search terms\\\",\\"
+        echo "                  \\\"fields\\\": [\\\"content\\\", \\\"title\\\", \\\"meta.title\\\"]\\"
+        echo "                }\\"
+        echo "              }\\"
+        echo "            }\\"
+        echo "          },\\"
+        echo "          {\\"
+        echo "            \\\"standard\\\": {\\"
+        echo "              \\\"query\\\": {\\"
+        echo "                \\\"semantic\\\": {\\"
+        echo "                  \\\"field\\\": \\\"content_semantic\\\",\\"
+        echo "                  \\\"query\\\": \\\"your search terms\\\"\\"
+        echo "                }\\"
+        echo "              }\\"
+        echo "            }\\"
+        echo "          }\\"
+        echo "        ],\\"
+        echo "        \\\"rank_window_size\\\": 50,\\"
+        echo "        \\\"rank_constant\\\": 20\\"
+        echo "      }\\"
+        echo "    },\\"
+        echo "    \\\"size\\\": 10\\"
+        echo "  }\""
         
         echo "Setup verification completed!"
       '

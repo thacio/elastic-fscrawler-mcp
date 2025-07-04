@@ -4,10 +4,11 @@ A complete document search solution with automatic document crawling, OCR proces
 
 ## Features
 
-🔍 **Dual Search Capabilities**
+🔍 **Triple Search Capabilities**
 - **Normal Search**: Traditional keyword-based search with highlighting
 - **Semantic Search**: AI-powered contextual search using E5 multilingual model
-- **Single Index**: Both search types work on the same `semantic_documents` index
+- **Hybrid Search**: Combined lexical + semantic search using RRF (Reciprocal Rank Fusion)
+- **Single Index**: All search types work on the same `semantic_documents` index
 - **Real-time Results**: Instant search across all document content
 
 📄 **Automatic Document Processing**
@@ -87,6 +88,44 @@ curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_
         "query": "artificial intelligence in healthcare"
       }
     }
+  }'
+```
+
+**Hybrid Search (Best of both worlds):**
+```bash
+# Combines exact keyword matching + semantic understanding
+curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search?pretty" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "retriever": {
+      "rrf": {
+        "retrievers": [
+          {
+            "standard": {
+              "query": {
+                "multi_match": {
+                  "query": "contract agreement",
+                  "fields": ["content", "title", "meta.title"]
+                }
+              }
+            }
+          },
+          {
+            "standard": {
+              "query": {
+                "semantic": {
+                  "field": "content_semantic",
+                  "query": "contract agreement"
+                }
+              }
+            }
+          }
+        ],
+        "rank_window_size": 50,
+        "rank_constant": 20
+      }
+    },
+    "size": 10
   }'
 ```
 
@@ -181,6 +220,66 @@ curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_
       "semantic": {
         "field": "content_semantic",
         "query": "legal contracts and agreements"
+      }
+    }
+  }'
+```
+
+**Hybrid search with filters:**
+```bash
+curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search?pretty" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "retriever": {
+      "rrf": {
+        "retrievers": [
+          {
+            "standard": {
+              "query": {
+                "bool": {
+                  "must": [
+                    {
+                      "multi_match": {
+                        "query": "financial report",
+                        "fields": ["content", "title"]
+                      }
+                    }
+                  ],
+                  "filter": [
+                    {"term": {"file.content_type": "application/pdf"}}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "standard": {
+              "query": {
+                "bool": {
+                  "must": [
+                    {
+                      "semantic": {
+                        "field": "content_semantic",
+                        "query": "financial report"
+                      }
+                    }
+                  ],
+                  "filter": [
+                    {"term": {"file.content_type": "application/pdf"}}
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "rank_window_size": 100,
+        "rank_constant": 10
+      }
+    },
+    "size": 5,
+    "highlight": {
+      "fields": {
+        "content": {}
       }
     }
   }'
