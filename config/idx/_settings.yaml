@@ -2,7 +2,7 @@
 name: "idx"
 fs:
   url: "/tmp/es"
-  update_rate: "5m"
+  update_rate: "1m"
   indexed_chars: 100%
   lang_detect: true
   continue_on_error: true
@@ -20,6 +20,9 @@ fs:
     - "**/readme.txt"
     - "**/README.md"
     - "**/readme.md"
+  thread_pool:
+    size: 16
+    max_size: 30
 elasticsearch:
   nodes:
     - url: "https://elasticsearch:9200"
@@ -29,6 +32,9 @@ elasticsearch:
   index: "semantic_documents"
   type: "_doc"
   pipeline: "semantic_documents_pipeline"
+  bulk_size: 100
+  flush_interval: "5s"
+  max_bulk_requests: 8
 rest:
   url: "http://fscrawler:8080"
 

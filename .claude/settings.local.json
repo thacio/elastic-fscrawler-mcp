@@ -16,7 +16,12 @@
       "Bash(docker run:*)",
       "Bash(docker start:*)",
       "Bash(docker restart:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(grep:*)",
+      "Bash(docker system prune:*)",
+      "Bash(docker stats:*)",
+      "Bash(docker stop:*)",
+      "Bash(docker rm:*)"
     ],
     "deny": []
   }
