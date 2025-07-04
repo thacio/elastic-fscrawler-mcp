@@ -329,6 +329,32 @@ services:
       - ${FSCRAWLER_PORT}:8080
     command: idx --restart --rest
 
+  # MCP Server
+  mcp-server:
+    build: ./mcp-server
+    container_name: mcp-server
+    restart: always
+    environment:
+      - ES_HOST=https://elasticsearch:9200
+      - ES_USER=elastic
+      - ES_PASS=${ELASTIC_PASSWORD}
+      - ES_DEFAULT_INDEX=semantic_documents
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      e5-setup:
+        condition: service_completed_successfully
+    ports:
+      - "8081:8080"
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 volumes:
   certs:
     driver: local

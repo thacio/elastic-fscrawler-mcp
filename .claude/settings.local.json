@@ -21,7 +21,12 @@
       "Bash(docker system prune:*)",
       "Bash(docker stats:*)",
       "Bash(docker stop:*)",
-      "Bash(docker rm:*)"
+      "Bash(docker rm:*)",
+      "Bash(mkdir:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker container:*)",
+      "Bash(python test_mcp_server.py:*)",
+      "Bash(python3:*)"
     ],
     "deny": []
   }
