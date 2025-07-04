@@ -245,9 +245,9 @@ elasticsearch:
   username: "elastic"
   password: "changeme"
   ssl_verification: false
-  index: "semantic_documents"  # Single index for both search types
+  index: "documents"  # Single index for both search types
   type: "_doc"
-  pipeline: "semantic_documents_pipeline"  # Auto-creates semantic field
+  pipeline: "documents_pipeline"  # Auto-creates semantic field
 rest:
   url: "http://fscrawler:8080"
 ```
@@ -297,7 +297,7 @@ curl -I http://localhost:5601
 curl -I http://localhost:8080
 
 # Test E5 semantic search (new!)
-curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search?pretty" \
+curl -k -u elastic:changeme -X POST "https://localhost:9200/documents/_search?pretty" \
   -H "Content-Type: application/json" \
   -d '{"query": {"semantic": {"field": "content_semantic", "query": "healthcare AI"}}, "size": 1}'
 ```
@@ -321,7 +321,7 @@ curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_
 The E5 setup is now **fully automated** through the `e5-setup` service in docker-compose.yml. When you run `docker-compose up -d`, the following happens automatically:
 
 1. **E5 Inference Endpoint Creation**: Creates `my-e5-model` endpoint with multilingual E5 model
-2. **Dual-Purpose Index Creation**: Creates `semantic_documents` index supporting both normal and semantic search
+2. **Dual-Purpose Index Creation**: Creates `documents` index supporting both normal and semantic search
 3. **Ingest Pipeline Setup**: Creates pipeline that automatically generates semantic embeddings
 4. **FSCrawler Integration**: Configures single FSCrawler to use the semantic index and pipeline
 5. **Automatic Document Processing**: FSCrawler indexes documents for BOTH search types simultaneously
@@ -357,7 +357,7 @@ curl -k -u elastic:changeme "https://localhost:9200/_ml/info?pretty"
 curl -k -u elastic:changeme "https://localhost:9200/_inference/my-e5-model?pretty"
 
 # Check semantic documents index
-curl -k -u elastic:changeme "https://localhost:9200/semantic_documents?pretty"
+curl -k -u elastic:changeme "https://localhost:9200/documents?pretty"
 ```
 
 ## Document Indexing
@@ -375,7 +375,7 @@ curl -k -u elastic:changeme "https://localhost:9200/semantic_documents?pretty"
 
 ```bash
 # Index additional document with semantic field
-curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_doc/5" -H "Content-Type: application/json" -d '{
+curl -k -u elastic:changeme -X POST "https://localhost:9200/documents/_doc/5" -H "Content-Type: application/json" -d '{
   "title": "Your Document Title",
   "content": "Your document content here...",
   "content_semantic": "Your document content here...",
@@ -411,10 +411,10 @@ cp your-document.txt elastic_documents/
 curl -k -u elastic:changeme "https://localhost:9200/_cat/indices"
 
 # Count documents in semantic index (shows total indexed documents)
-curl -k -u elastic:changeme "https://localhost:9200/semantic_documents/_count?pretty"
+curl -k -u elastic:changeme "https://localhost:9200/documents/_count?pretty"
 
 # Search all documents
-curl -k -u elastic:changeme "https://localhost:9200/semantic_documents/_search?pretty"
+curl -k -u elastic:changeme "https://localhost:9200/documents/_search?pretty"
 ```
 
 ## Testing Search Functionality
@@ -423,7 +423,7 @@ curl -k -u elastic:changeme "https://localhost:9200/semantic_documents/_search?p
 
 ```bash
 # Simple keyword search with highlighting
-curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search?pretty" \
+curl -k -u elastic:changeme -X POST "https://localhost:9200/documents/_search?pretty" \
   -H "Content-Type: application/json" \
   -d '{"query": {"match": {"content": "machine learning"}}, "highlight": {"fields": {"content": {}}}}'
 ```
@@ -432,7 +432,7 @@ curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_
 
 ```bash
 # Search for medical concepts using natural language
-curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search?pretty" \
+curl -k -u elastic:changeme -X POST "https://localhost:9200/documents/_search?pretty" \
   -H "Content-Type: application/json" \
   -d '{
     "query": {
@@ -446,7 +446,7 @@ curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_
 
 ```bash
 # Search with different terminology
-curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search?pretty" -H "Content-Type: application/json" -d '{
+curl -k -u elastic:changeme -X POST "https://localhost:9200/documents/_search?pretty" -H "Content-Type: application/json" -d '{
   "query": {
     "semantic": {
       "field": "content_semantic",
@@ -460,7 +460,7 @@ curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_
 
 ```bash
 # Boolean query combining semantic and traditional search
-curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search?pretty" -H "Content-Type: application/json" -d '{
+curl -k -u elastic:changeme -X POST "https://localhost:9200/documents/_search?pretty" -H "Content-Type: application/json" -d '{
   "query": {
     "bool": {
       "should": [
@@ -546,7 +546,7 @@ For production environments, consider:
 
 **Delete all documents from semantic index:**
 ```bash
-curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_delete_by_query" \
+curl -k -u elastic:changeme -X POST "https://localhost:9200/documents/_delete_by_query" \
   -H "Content-Type: application/json" \
   -d '{"query": {"match_all": {}}}'
 ```
@@ -554,17 +554,17 @@ curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_
 **Delete specific documents:**
 ```bash
 # Delete by document ID
-curl -k -u elastic:changeme -X DELETE "https://localhost:9200/semantic_documents/_doc/1"
+curl -k -u elastic:changeme -X DELETE "https://localhost:9200/documents/_doc/1"
 
 # Delete by query (e.g., by author)
-curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_delete_by_query" \
+curl -k -u elastic:changeme -X POST "https://localhost:9200/documents/_delete_by_query" \
   -H "Content-Type: application/json" \
   -d '{"query": {"term": {"author": "specific_author"}}}'
 ```
 
 **Delete entire index (removes all documents and mappings):**
 ```bash
-curl -k -u elastic:changeme -X DELETE "https://localhost:9200/semantic_documents"
+curl -k -u elastic:changeme -X DELETE "https://localhost:9200/documents"
 # Note: You'll need to recreate the index with proper mappings after this
 ```
 
@@ -618,14 +618,14 @@ This configuration provides a **single FSCrawler instance** that automatically p
 
 ### How It Works
 
-1. **Single Index Architecture**: The `semantic_documents` index contains:
+1. **Single Index Architecture**: The `documents` index contains:
    - `content` field: Original text for normal keyword search
    - `content_semantic` field: AI-generated embeddings for semantic search
 
 2. **Automatic Dual Processing**: 
    - FSCrawler reads documents from `elastic_documents/` folder
    - Extracts text content (with OCR support)
-   - Indexes to `semantic_documents` using `semantic_documents_pipeline`
+   - Indexes to `documents` using `documents_pipeline`
    - Pipeline automatically creates both search fields
 
 3. **Two Search Types Available**:
@@ -646,15 +646,15 @@ This configuration provides a **single FSCrawler instance** that automatically p
 
 ```bash
 # Check document count
-curl -k -u elastic:changeme "https://localhost:9200/semantic_documents/_count"
+curl -k -u elastic:changeme "https://localhost:9200/documents/_count"
 
 # Test normal search
-curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search" \
+curl -k -u elastic:changeme -X POST "https://localhost:9200/documents/_search" \
   -H "Content-Type: application/json" \
   -d '{"query": {"match": {"content": "test"}}, "size": 1}'
 
 # Test semantic search  
-curl -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search" \
+curl -k -u elastic:changeme -X POST "https://localhost:9200/documents/_search" \
   -H "Content-Type: application/json" \
   -d '{"query": {"semantic": {"field": "content_semantic", "query": "testing"}}, "size": 1}'
 ```

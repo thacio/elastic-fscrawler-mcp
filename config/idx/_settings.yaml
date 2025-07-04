@@ -26,9 +26,9 @@ elasticsearch:
   username: "elastic"
   password: "changeme"
   ssl_verification: false
-  index: "semantic_documents"
+  index: "documents"
   type: "_doc"
-  pipeline: "semantic_documents_pipeline"
+  pipeline: "documents_pipeline"
   bulk_size: 100
   flush_interval: "5s"
   max_bulk_requests: 8

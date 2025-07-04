@@ -12,14 +12,14 @@ This folder contains scripts to use Elasticsearch search.
 ## Available Tools
 
 ### Elasticsearch Tools:
-- **search** - Traditional keyword search on `semantic_documents` index with highlighted fragments
-- **semantic_search** - AI-powered semantic search using E5 model on `semantic_documents` index with fragments
+- **search** - Traditional keyword search on `documents` index with highlighted fragments
+- **semantic_search** - AI-powered semantic search using E5 model on `documents` index with fragments
 - **hybrid_search** - RRF (Reciprocal Rank Fusion) combining both lexical and semantic search
-- **count** - Get document count for an index (defaults to `semantic_documents`)
+- **count** - Get document count for an index (defaults to `documents`)
 - **indices** - List all available indices
 
 ### Unified Index Architecture:
-- All three search types use the same `semantic_documents` index
+- All three search types use the same `documents` index
 - Normal search queries the `content` field for keyword matching
 - Semantic search queries the `content_semantic` field for AI-powered contextual search
 - Hybrid search combines both approaches using RRF for optimal results
@@ -41,22 +41,22 @@ hybrid_search "query" [index] [size] [highlight] [fragment_size] [num_fragments]
 ./elasticsearch.sh search "contract agreement"
 
 # Custom fragment settings (query, index, size, highlight, fragment_size, num_fragments)
-./elasticsearch.sh search "elementos" semantic_documents 5 true 200 2
+./elasticsearch.sh search "elementos" documents 5 true 200 2
 
 # Normal search with highlighting
-./elasticsearch.sh search "auditoria" semantic_documents 10 true
+./elasticsearch.sh search "auditoria" documents 10 true
 
 # Semantic search for concepts
 ./elasticsearch.sh semantic_search "documentos sobre auditoria e evidências"
 
 # Semantic search with highlighting
-./elasticsearch.sh semantic_search "relatórios de compliance" semantic_documents 10 true
+./elasticsearch.sh semantic_search "relatórios de compliance" documents 10 true
 
 # Hybrid search combining both approaches
 ./elasticsearch.sh hybrid_search "contract agreement"
 
 # Hybrid search with custom parameters
-./elasticsearch.sh hybrid_search "elementos evidências" semantic_documents 10 true 300 3 50 20
+./elasticsearch.sh hybrid_search "elementos evidências" documents 10 true 300 3 50 20
 
 # Other operations
 ./elasticsearch.sh count
@@ -69,22 +69,22 @@ REM Basic search with default fragments
 elasticsearch.bat search "contract agreement"
 
 REM Custom fragment settings (query, index, size, highlight, fragment_size, num_fragments)
-elasticsearch.bat search "elementos" semantic_documents 5 true 200 2
+elasticsearch.bat search "elementos" documents 5 true 200 2
 
 REM Normal search with highlighting
-elasticsearch.bat search "auditoria" semantic_documents 10 true
+elasticsearch.bat search "auditoria" documents 10 true
 
 REM Semantic search for concepts
 elasticsearch.bat semantic_search "documentos sobre auditoria e evidências"
 
 REM Semantic search with highlighting
-elasticsearch.bat semantic_search "relatórios de compliance" semantic_documents 10 true
+elasticsearch.bat semantic_search "relatórios de compliance" documents 10 true
 
 REM Hybrid search combining both approaches
 elasticsearch.bat hybrid_search "contract agreement"
 
 REM Hybrid search with custom parameters
-elasticsearch.bat hybrid_search "elementos evidências" semantic_documents 10 true 300 3 50 20
+elasticsearch.bat hybrid_search "elementos evidências" documents 10 true 300 3 50 20
 
 REM Other operations
 elasticsearch.bat count
@@ -109,20 +109,20 @@ You can customize Elasticsearch connection by setting:
 ### Custom Usage Examples:
 ```bash
 # Custom result count and fragment size
-./elasticsearch.sh search "query" semantic_documents 10 true 300 3
+./elasticsearch.sh search "query" documents 10 true 300 3
 
 # Disable highlighting (returns full content)
-./elasticsearch.sh semantic_search "query" semantic_documents 5 false
+./elasticsearch.sh semantic_search "query" documents 5 false
 
 # Custom RRF parameters for hybrid search
-./elasticsearch.sh hybrid_search "query" semantic_documents 10 true 400 4 100 30
+./elasticsearch.sh hybrid_search "query" documents 10 true 400 4 100 30
 ```
 
 ### Default Settings by Search Type:
 
 | Parameter | Normal Search | Semantic Search | Hybrid Search |
 |-----------|---------------|-----------------|---------------|
-| **index** | `semantic_documents` | `semantic_documents` | `semantic_documents` |
+| **index** | `documents` | `documents` | `documents` |
 | **size** | `5` | `5` | `5` |
 | **highlight** | `true` | `true` | `true` |
 | **fragment_size** | `600` | `600` | `600` |
@@ -144,7 +144,7 @@ You can customize Elasticsearch connection by setting:
 - Single index architecture supports both search types efficiently
 
 ### Current Configuration:
-- **Index**: `semantic_documents` (unified for both search types)
+- **Index**: `documents` (unified for both search types)
 - **Document Location**: `../elastic_documents/` (auto-monitored by FSCrawler)
 - **Search Types**: Normal keyword search + AI semantic search
 - **File Support**: PDF, TXT, DOC, DOCX with OCR capabilities
@@ -154,14 +154,14 @@ You can customize Elasticsearch connection by setting:
 ### Example Usage:
 ```bash
 # Normal search for exact keywords
-./elasticsearch.sh search "elementos comprobatórios" semantic_documents 5 true
+./elasticsearch.sh search "elementos comprobatórios" documents 5 true
 
 # Semantic search for concepts and meaning
-./elasticsearch.sh semantic_search "documentos de auditoria e evidências" semantic_documents 5 true
+./elasticsearch.sh semantic_search "documentos de auditoria e evidências" documents 5 true
 
 # Hybrid search for best of both approaches
-./elasticsearch.sh hybrid_search "elementos comprobatórios" semantic_documents 5 true
+./elasticsearch.sh hybrid_search "elementos comprobatórios" documents 5 true
 
 # Check total document count
-./elasticsearch.sh count semantic_documents
+./elasticsearch.sh count documents
 ```

@@ -27,7 +27,7 @@ The server uses the following environment variables:
 - `ES_HOST`: Elasticsearch host URL (default: `https://elasticsearch:9200`)
 - `ES_USER`: Elasticsearch username (default: `elastic`)
 - `ES_PASS`: Elasticsearch password (default: `changeme`)
-- `ES_DEFAULT_INDEX`: Default index to search (default: `semantic_documents`)
+- `ES_DEFAULT_INDEX`: Default index to search (default: `documents`)
 
 ## Docker Usage
 
@@ -102,7 +102,7 @@ if __name__ == "__main__":
 #### `search(query, index, size, highlight, fragment_size, num_fragments)`
 Performs traditional keyword search.
 - **query**: Search query string
-- **index**: Index to search (default: semantic_documents)
+- **index**: Index to search (default: documents)
 - **size**: Number of results (default: 5)
 - **highlight**: Include highlighted fragments (default: true)
 - **fragment_size**: Size of fragments in characters (default: 600)
@@ -123,13 +123,13 @@ Combines keyword and semantic search using RRF.
 
 #### `count_documents(index, query)`
 Counts documents in an index.
-- **index**: Index to count (default: semantic_documents)
+- **index**: Index to count (default: documents)
 - **query**: Optional filter query
 
 #### `get_document(document_id, index)`
 Retrieves a specific document.
 - **document_id**: Document ID to retrieve
-- **index**: Index to search (default: semantic_documents)
+- **index**: Index to search (default: documents)
 
 #### `list_indices()`
 Lists all available indices with document counts and sizes.
@@ -145,7 +145,7 @@ This MCP server is designed to work seamlessly with the existing Elasticsearch +
 2. **FSCrawler**: Indexes documents from `./elastic_documents/` folder
 3. **MCP Server**: Exposes search capabilities to AI agents via MCP protocol
 
-The server automatically uses the same index (`semantic_documents`) that FSCrawler populates, ensuring all indexed documents are immediately searchable through the MCP interface.
+The server automatically uses the same index (`documents`) that FSCrawler populates, ensuring all indexed documents are immediately searchable through the MCP interface.
 
 ## Troubleshooting
 
@@ -153,7 +153,7 @@ The server automatically uses the same index (`semantic_documents`) that FSCrawl
 
 1. **Connection Refused**: Make sure Elasticsearch is running and healthy
 2. **SSL Errors**: The server disables SSL verification for self-signed certificates
-3. **Empty Results**: Check if FSCrawler has indexed documents in the `semantic_documents` index
+3. **Empty Results**: Check if FSCrawler has indexed documents in the `documents` index
 4. **404 Errors**: Use the correct endpoint `/mcp/` not just `/`
 
 ### Debug Commands
@@ -162,8 +162,8 @@ The server automatically uses the same index (`semantic_documents`) that FSCrawl
 # Check if Elasticsearch is accessible
 curl -k -u elastic:changeme https://localhost:9200/_cluster/health
 
-# Check if semantic_documents index exists
-curl -k -u elastic:changeme https://localhost:9200/semantic_documents/_count
+# Check if documents index exists
+curl -k -u elastic:changeme https://localhost:9200/documents/_count
 
 # Check MCP server logs
 docker logs mcp-server

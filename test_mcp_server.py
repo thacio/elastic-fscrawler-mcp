@@ -45,7 +45,7 @@ async def test_mcp_server():
             
             # Test 6: Count documents
             print("\n🔢 Testing: Count Documents")
-            count = await client.call_tool("count_documents", {"index": "semantic_documents"})
+            count = await client.call_tool("count_documents", {"index": "documents"})
             print(f"Document count: {count.data}")
             
             # Test 7: Get search statistics resource

@@ -7,9 +7,9 @@ Instructions:
 - Add any documents (PDF, DOC, TXT, etc.) to this folder
 - FSCrawler will automatically detect and index them within 15 minutes
 - Removing files from this folder will also remove them from Elasticsearch
-- Documents are indexed into the 'idx' index (not semantic_documents)
+- Documents are indexed into the 'idx' index (not documents)
 
-For semantic search, use the semantic_documents index via API calls.
+For semantic search, use the documents index via API calls.
 
 Path mapping:
 - Host: ./elastic_documents/

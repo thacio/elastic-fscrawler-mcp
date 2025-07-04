@@ -163,7 +163,7 @@ services:
         sleep 60
         
         echo "Creating semantic documents index with hybrid search support..."
-        curl -k -u elastic:${ELASTIC_PASSWORD} -X PUT "https://elasticsearch:9200/semantic_documents" \
+        curl -k -u elastic:${ELASTIC_PASSWORD} -X PUT "https://elasticsearch:9200/documents" \
           -H "Content-Type: application/json" \
           -d "{
             \"mappings\": {
@@ -238,7 +238,7 @@ services:
           }" || echo "Semantic index may already exist"
         
         echo "Creating ingest pipeline for semantic documents..."
-        curl -k -u elastic:${ELASTIC_PASSWORD} -X PUT "https://elasticsearch:9200/_ingest/pipeline/semantic_documents_pipeline" \
+        curl -k -u elastic:${ELASTIC_PASSWORD} -X PUT "https://elasticsearch:9200/_ingest/pipeline/documents_pipeline" \
           -H "Content-Type: application/json" \
           -d "{
             \"description\": \"Pipeline to automatically populate semantic field from document content\",
@@ -258,7 +258,7 @@ services:
         sleep 30
         
         echo "Testing semantic search functionality..."
-        curl -k -u elastic:${ELASTIC_PASSWORD} -X POST "https://elasticsearch:9200/semantic_documents/_search?pretty" \
+        curl -k -u elastic:${ELASTIC_PASSWORD} -X POST "https://elasticsearch:9200/documents/_search?pretty" \
           -H "Content-Type: application/json" \
           -d "{
             \"query\": {
@@ -270,7 +270,7 @@ services:
         echo "Creating hybrid search example queries..."
         echo "Hybrid search is now configured! Use RRF retrievers for hybrid search."
         echo "Example hybrid search query:"
-        echo "curl -k -u elastic:${ELASTIC_PASSWORD} -X POST \"https://elasticsearch:9200/semantic_documents/_search?pretty\" \\"
+        echo "curl -k -u elastic:${ELASTIC_PASSWORD} -X POST \"https://elasticsearch:9200/documents/_search?pretty\" \\"
         echo "  -H \"Content-Type: application/json\" \\"
         echo "  -d \"{\\"
         echo "    \\\"retriever\\\": {\\"
@@ -338,7 +338,7 @@ services:
       - ES_HOST=https://elasticsearch:9200
       - ES_USER=elastic
       - ES_PASS=${ELASTIC_PASSWORD}
-      - ES_DEFAULT_INDEX=semantic_documents
+      - ES_DEFAULT_INDEX=documents
     depends_on:
       elasticsearch:
         condition: service_healthy

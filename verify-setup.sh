@@ -35,7 +35,7 @@ check_service() {
 # Function to run semantic search test
 test_semantic_search() {
     echo -n "Testing semantic search... "
-    response=$(curl -s -k -u elastic:changeme -X POST "https://localhost:9200/semantic_documents/_search" \
+    response=$(curl -s -k -u elastic:changeme -X POST "https://localhost:9200/documents/_search" \
         -H "Content-Type: application/json" \
         -d '{
             "query": {
@@ -101,12 +101,12 @@ fi
 
 # Check Semantic Documents Index
 echo -n "Checking semantic documents index... "
-index_response=$(curl -s -k -u elastic:changeme "https://localhost:9200/semantic_documents" 2>/dev/null)
-if echo "$index_response" | grep -q "semantic_documents"; then
+index_response=$(curl -s -k -u elastic:changeme "https://localhost:9200/documents" 2>/dev/null)
+if echo "$index_response" | grep -q "documents"; then
     echo -e "${GREEN}✓ OK${NC}"
     
     # Count documents
-    count_response=$(curl -s -k -u elastic:changeme "https://localhost:9200/semantic_documents/_count" 2>/dev/null)
+    count_response=$(curl -s -k -u elastic:changeme "https://localhost:9200/documents/_count" 2>/dev/null)
     count=$(echo "$count_response" | grep -o '"count":[0-9]*' | cut -d':' -f2)
     echo -e "  Documents indexed: $count"
 else
@@ -118,7 +118,7 @@ echo -e "${YELLOW}=== Testing Search Functionality ===${NC}"
 
 # Test traditional search
 echo -n "Testing keyword search... "
-keyword_response=$(curl -s -k -u elastic:changeme "https://localhost:9200/semantic_documents/_search?q=machine+learning" 2>/dev/null)
+keyword_response=$(curl -s -k -u elastic:changeme "https://localhost:9200/documents/_search?q=machine+learning" 2>/dev/null)
 if echo "$keyword_response" | grep -q '"hits"'; then
     echo -e "${GREEN}✓ OK${NC}"
 else
@@ -132,7 +132,7 @@ echo
 echo -e "${YELLOW}=== Example Search Queries ===${NC}"
 echo
 echo -e "${BLUE}Semantic Search Examples:${NC}"
-echo "curl -k -u elastic:changeme -X POST \"https://localhost:9200/semantic_documents/_search?pretty\" \\"
+echo "curl -k -u elastic:changeme -X POST \"https://localhost:9200/documents/_search?pretty\" \\"
 echo "  -H \"Content-Type: application/json\" \\"
 echo "  -d '{"
 echo "    \"query\": {"
@@ -144,7 +144,7 @@ echo "    }"
 echo "  }'"
 echo
 echo -e "${BLUE}Keyword Search Examples:${NC}"
-echo "curl -k -u elastic:changeme \"https://localhost:9200/semantic_documents/_search?q=machine+learning&pretty\""
+echo "curl -k -u elastic:changeme \"https://localhost:9200/documents/_search?q=machine+learning&pretty\""
 echo
 echo -e "${BLUE}Access URLs:${NC}"
 echo "• Elasticsearch: https://localhost:9200 (elastic:changeme)"

@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 ES_HOST = os.getenv("ES_HOST", "https://elasticsearch:9200")
 ES_USER = os.getenv("ES_USER", "elastic")
 ES_PASS = os.getenv("ES_PASS", "changeme")
-ES_DEFAULT_INDEX = os.getenv("ES_DEFAULT_INDEX", "semantic_documents")
+ES_DEFAULT_INDEX = os.getenv("ES_DEFAULT_INDEX", "documents")
 
 # Create MCP server
 mcp = FastMCP(name="Elasticsearch Search Server")
@@ -74,8 +74,6 @@ def format_search_results(results: Dict[str, Any]) -> Dict[str, Any]:
     for hit in results["hits"]["hits"]:
         formatted_hit = {
             "score": hit.get("_score", 0),
-            "index": hit.get("_index", ""),
-            "document_id": hit.get("_id", ""),
             "source": hit.get("_source", {}),
         }
         
@@ -88,7 +86,6 @@ def format_search_results(results: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "total_hits": results["hits"]["total"]["value"],
         "max_score": results["hits"]["max_score"],
-        "took_ms": results["took"],
         "documents": formatted_hits
     }
 
@@ -107,7 +104,7 @@ async def search(
     
     Args:
         query: Search query string
-        index: Elasticsearch index to search (default: semantic_documents)
+        index: Elasticsearch index to search (default: documents)
         size: Number of results to return (default: 5)
         highlight: Whether to include highlighted text fragments (default: True)
         fragment_size: Size of highlighted fragments in characters (default: 600)
@@ -123,7 +120,7 @@ async def search(
         "query": {
             "multi_match": {
                 "query": query,
-                "fields": ["content", "title", "file.filename", "meta.title"]
+                "fields": ["content", "file.filename"]
             }
         },
         "size": size
@@ -140,9 +137,9 @@ async def search(
                 }
             }
         }
-        search_body["_source"] = ["title", "file.filename", "file.last_modified", "path.real", "path.virtual", "meta"]
+        search_body["_source"] = ["file.filename", "path.virtual"]
     else:
-        search_body["_source"] = ["title", "content", "file.filename", "file.last_modified", "path.real", "path.virtual", "meta"]
+        search_body["_source"] = ["content", "file.filename", "path.virtual"]
     
     try:
         results = await elasticsearch_request("POST", f"{index}/_search", search_body)
@@ -172,7 +169,7 @@ async def semantic_search(
     
     Args:
         query: Search query string (can be natural language)
-        index: Elasticsearch index to search (default: semantic_documents)
+        index: Elasticsearch index to search (default: documents)
         size: Number of results to return (default: 5)
         highlight: Whether to include highlighted text fragments (default: True)
         fragment_size: Size of highlighted fragments in characters (default: 600)
@@ -200,7 +197,7 @@ async def semantic_search(
                         {
                             "multi_match": {
                                 "query": query,
-                                "fields": ["content", "title"],
+                                "fields": ["content"],
                                 "boost": 0.5
                             }
                         }
@@ -217,7 +214,7 @@ async def semantic_search(
                     }
                 }
             },
-            "_source": ["title", "file.filename", "file.last_modified", "path.real", "path.virtual", "meta"],
+            "_source": ["file.filename", "path.virtual"],
             "size": size
         }
     else:
@@ -229,7 +226,7 @@ async def semantic_search(
                     "query": query
                 }
             },
-            "_source": ["title", "content", "content_semantic", "file.filename", "file.last_modified", "path.real", "path.virtual", "meta"],
+            "_source": ["content", "content_semantic", "file.filename", "path.virtual"],
             "size": size
         }
     
@@ -263,7 +260,7 @@ async def hybrid_search(
     
     Args:
         query: Search query string
-        index: Elasticsearch index to search (default: semantic_documents)
+        index: Elasticsearch index to search (default: documents)
         size: Number of results to return (default: 5)
         highlight: Whether to include highlighted text fragments (default: True)
         fragment_size: Size of highlighted fragments in characters (default: 600)
@@ -286,7 +283,7 @@ async def hybrid_search(
                             "query": {
                                 "multi_match": {
                                     "query": query,
-                                    "fields": ["content", "title", "meta.title"]
+                                    "fields": ["content"]
                                 }
                             }
                         }
@@ -320,9 +317,9 @@ async def hybrid_search(
                 }
             }
         }
-        search_body["_source"] = ["title", "file.filename", "file.last_modified", "path.real", "path.virtual", "meta"]
+        search_body["_source"] = ["file.filename", "path.virtual"]
     else:
-        search_body["_source"] = ["title", "content", "file.filename", "file.last_modified", "path.real", "path.virtual", "meta"]
+        search_body["_source"] = ["content", "file.filename", "path.real", "path.virtual"]
     
     try:
         results = await elasticsearch_request("POST", f"{index}/_search", search_body)
@@ -347,7 +344,7 @@ async def count_documents(
     Count documents in an Elasticsearch index.
     
     Args:
-        index: Elasticsearch index to count documents in (default: semantic_documents)
+        index: Elasticsearch index to count documents in (default: documents)
         query: Optional query to count specific documents (default: None - count all)
     
     Returns:
@@ -362,7 +359,7 @@ async def count_documents(
             "query": {
                 "multi_match": {
                     "query": query,
-                    "fields": ["content", "title", "file.filename"]
+                    "fields": ["content", "file.filename"]
                 }
             }
         }
@@ -462,7 +459,7 @@ async def get_document(
     
     Args:
         document_id: The document ID to retrieve
-        index: Elasticsearch index to search in (default: semantic_documents)
+        index: Elasticsearch index to search in (default: documents)
     
     Returns:
         The document content and metadata

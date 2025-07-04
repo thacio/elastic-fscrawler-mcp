@@ -12,7 +12,7 @@ case "$1" in
   "search")
     # Traditional search with optional highlighting
     QUERY="$2"
-    INDEX="${3:-semantic_documents}"
+    INDEX="${3:-documents}"
     SIZE="${4:-5}"
     HIGHLIGHT="${5:-true}"
     FRAGMENT_SIZE="${6:-600}"
@@ -53,7 +53,7 @@ case "$1" in
   "semantic_search")
     # Semantic search with optional highlighting
     QUERY="$2"
-    INDEX="${3:-semantic_documents}"
+    INDEX="${3:-documents}"
     SIZE="${4:-5}"
     HIGHLIGHT="${5:-true}"
     FRAGMENT_SIZE="${6:-600}"
@@ -125,7 +125,7 @@ case "$1" in
   "hybrid_search")
     # Hybrid search using RRF (Reciprocal Rank Fusion)
     QUERY="$2"
-    INDEX="${3:-semantic_documents}"
+    INDEX="${3:-documents}"
     SIZE="${4:-5}"
     HIGHLIGHT="${5:-true}"
     FRAGMENT_SIZE="${6:-600}"
@@ -189,7 +189,7 @@ case "$1" in
     
   "count")
     # Document count
-    INDEX="${2:-semantic_documents}"
+    INDEX="${2:-documents}"
     
     curl -k -u "$ES_USER:$ES_PASS" \
       "$ES_HOST/$INDEX/_count?pretty"
@@ -205,13 +205,13 @@ case "$1" in
     echo "Usage: $0 {search|semantic_search|hybrid_search|count|indices} <query> [index] [size] [highlight] [fragment_size] [num_fragments] [rank_window_size] [rank_constant]"
     echo "Examples:"
     echo "  $0 search 'contract agreement'"
-    echo "  $0 search 'elementos' semantic_documents 5 true 200 2"
-    echo "  $0 search 'legal documents' semantic_documents 5 true 200 2"
+    echo "  $0 search 'elementos' documents 5 true 200 2"
+    echo "  $0 search 'legal documents' documents 5 true 200 2"
     echo "  $0 semantic_search 'legal documents'"
-    echo "  $0 semantic_search 'auditoria dados' semantic_documents 10 true"
+    echo "  $0 semantic_search 'auditoria dados' documents 10 true"
     echo "  $0 hybrid_search 'contract agreement'"
-    echo "  $0 hybrid_search 'elementos evidências' semantic_documents 10 true 300 3 50 20"
-    echo "  $0 count semantic_documents"
+    echo "  $0 hybrid_search 'elementos evidências' documents 10 true 300 3 50 20"
+    echo "  $0 count documents"
     echo "  $0 indices"
     echo ""
     echo "Search Types:"
