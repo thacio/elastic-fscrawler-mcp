@@ -2,7 +2,7 @@
 name: "idx"
 fs:
   url: "/tmp/es"
-  update_rate: "1m"
+  update_rate: "30s"
   indexed_chars: 100%
   lang_detect: true
   continue_on_error: true
