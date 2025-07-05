@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "elasticsearch-search": {
+      "httpUrl": "http://localhost:9876/mcp",
+      "timeout": 30000,
+      "trust": false,
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  }
+}
