@@ -10,6 +10,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 from typing import Dict, Any, List, Optional, Union
 from urllib.parse import quote_plus
 
@@ -65,6 +66,59 @@ async def elasticsearch_request(method: str, endpoint: str, data: Optional[Dict]
         logger.error(f"Elasticsearch request failed: {e}")
         raise Exception(f"Elasticsearch request failed: {str(e)}")
 
+def remove_html_tags(text: str) -> str:
+    """Remove HTML tags from text for comparison purposes"""
+    if not text:
+        return ""
+    # Remove <mark> and </mark> tags specifically
+    clean_text = re.sub(r'</?mark>', '', text)
+    return clean_text
+
+def deduplicate_highlights(highlight_fragments: List[str]) -> List[str]:
+    """
+    Remove duplicate highlight fragments by comparing stripped text.
+    Keep the version with the most highlighting coverage.
+    
+    Args:
+        highlight_fragments: List of highlight fragments with <mark> tags
+    
+    Returns:
+        List of unique highlight fragments, preserving the best highlighted version
+    """
+    if not highlight_fragments:
+        return []
+    
+    seen_texts = {}  # plain_text -> (highlighted_version, mark_count, original_index)
+    result_order = []  # Track order of unique texts
+    
+    for i, fragment in enumerate(highlight_fragments):
+        if not fragment:
+            continue
+            
+        # Strip HTML tags for comparison
+        plain_text = remove_html_tags(fragment).strip()
+        
+        # Skip empty fragments
+        if not plain_text:
+            continue
+            
+        # Count highlighting coverage
+        mark_count = fragment.count('<mark>')
+        
+        # Check if we've seen this text before
+        if plain_text in seen_texts:
+            # Keep the version with more highlighting
+            if mark_count > seen_texts[plain_text][1]:
+                # Update with better highlighted version, preserve original position
+                seen_texts[plain_text] = (fragment, mark_count, seen_texts[plain_text][2])
+        else:
+            # First time seeing this text
+            seen_texts[plain_text] = (fragment, mark_count, i)
+            result_order.append(plain_text)
+    
+    # Return results in original order, using the best highlighted version
+    return [seen_texts[plain_text][0] for plain_text in result_order if plain_text in seen_texts]
+
 def format_search_results(results: Dict[str, Any]) -> Dict[str, Any]:
     """Format search results for better readability"""
     if "hits" not in results:
@@ -79,7 +133,14 @@ def format_search_results(results: Dict[str, Any]) -> Dict[str, Any]:
         
         # Add highlighted content if available
         if "highlight" in hit:
-            formatted_hit["highlighted_content"] = hit["highlight"]
+            # Apply deduplication to highlight fragments
+            deduplicated_highlight = {}
+            for field, fragments in hit["highlight"].items():
+                if isinstance(fragments, list):
+                    deduplicated_highlight[field] = deduplicate_highlights(fragments)
+                else:
+                    deduplicated_highlight[field] = fragments
+            formatted_hit["highlighted_content"] = deduplicated_highlight
         
         formatted_hits.append(formatted_hit)
     
