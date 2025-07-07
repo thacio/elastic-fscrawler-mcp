@@ -127,6 +127,7 @@ def format_search_results(results: Dict[str, Any]) -> Dict[str, Any]:
     formatted_hits = []
     for hit in results["hits"]["hits"]:
         formatted_hit = {
+            "document_id": hit.get("_id"),
             "score": hit.get("_score", 0),
             "source": hit.get("_source", {}),
         }
@@ -381,7 +382,7 @@ async def hybrid_search(
         }
         search_body["_source"] = ["file.filename", "path.virtual"]
     else:
-        search_body["_source"] = ["content", "file.filename", "path.real", "path.virtual"]
+        search_body["_source"] = ["content", "file.filename", "path.virtual"]
     
     try:
         results = await elasticsearch_request("POST", f"{index}/_search", search_body)
@@ -520,7 +521,7 @@ async def get_document(
     Get a specific document by ID from Elasticsearch.
     
     Args:
-        document_id: The document ID to retrieve
+        document_id: The document ID to retrieve (use document_id from search results)
         index: Elasticsearch index to search in (default: documents)
     
     Returns:
@@ -545,6 +546,10 @@ async def get_document(
     except Exception as e:
         if ctx:
             await ctx.error(f"Get document failed: {str(e)}")
+        # Provide helpful error message about using document_id from search results
+        error_msg = str(e)
+        if "404 Not Found" in error_msg:
+            raise Exception(f"Document '{document_id}' not found in index '{index}'. Make sure to use the 'document_id' field from search results.")
         raise
 
 # Resource for getting search statistics

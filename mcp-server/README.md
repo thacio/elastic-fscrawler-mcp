@@ -86,6 +86,14 @@ async def main():
         })
         print("Search results:", results.data)
         
+        # Get a specific document using document_id from search results
+        if results.data["documents"]:
+            document_id = results.data["documents"][0]["document_id"]
+            document = await client.call_tool("get_document", {
+                "document_id": document_id
+            })
+            print("Retrieved document:", document.data)
+        
         # Check cluster health
         health = await client.call_tool("health_check", {})
         print("Cluster health:", health.data)
@@ -96,6 +104,20 @@ if __name__ == "__main__":
 ```
 
 ## Tool Details
+
+### Working with Document IDs
+
+All search functions (`search`, `semantic_search`, `hybrid_search`) now return a `document_id` field in their results. This ID can be used with the `get_document` function to retrieve the full document content:
+
+```python
+# Search for documents
+results = await client.call_tool("search", {"query": "acordao"})
+
+# Get the first document by ID
+if results.data["documents"]:
+    doc_id = results.data["documents"][0]["document_id"]
+    full_document = await client.call_tool("get_document", {"document_id": doc_id})
+```
 
 ### Search Tools
 
@@ -128,7 +150,7 @@ Counts documents in an index.
 
 #### `get_document(document_id, index)`
 Retrieves a specific document.
-- **document_id**: Document ID to retrieve
+- **document_id**: Document ID to retrieve (use the `document_id` field from search results)
 - **index**: Index to search (default: documents)
 
 #### `list_indices()`
