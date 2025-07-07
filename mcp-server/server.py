@@ -147,6 +147,7 @@ def format_search_results(results: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "total_hits": results["hits"]["total"]["value"],
         "max_score": results["hits"]["max_score"],
+        # "took_ms": results.get("took", 0),
         "documents": formatted_hits
     }
 
@@ -206,8 +207,8 @@ async def search(
         results = await elasticsearch_request("POST", f"{index}/_search", search_body)
         formatted_results = format_search_results(results)
         
-        if ctx:
-            await ctx.info(f"Found {formatted_results['total_hits']} documents in {formatted_results['took_ms']}ms")
+        # if ctx:
+        #     await ctx.info(f"Found {formatted_results['total_hits']} documents in {formatted_results['took_ms']}ms")
         
         return formatted_results
     except Exception as e:
@@ -295,8 +296,8 @@ async def semantic_search(
         results = await elasticsearch_request("POST", f"{index}/_search", search_body)
         formatted_results = format_search_results(results)
         
-        if ctx:
-            await ctx.info(f"Found {formatted_results['total_hits']} documents in {formatted_results['took_ms']}ms using semantic search")
+        # if ctx:
+        #     await ctx.info(f"Found {formatted_results['total_hits']} documents in {formatted_results['took_ms']}ms using semantic search")
         
         return formatted_results
     except Exception as e:
@@ -386,8 +387,8 @@ async def hybrid_search(
         results = await elasticsearch_request("POST", f"{index}/_search", search_body)
         formatted_results = format_search_results(results)
         
-        if ctx:
-            await ctx.info(f"Found {formatted_results['total_hits']} documents in {formatted_results['took_ms']}ms using hybrid search")
+        # if ctx:
+        #     await ctx.info(f"Found {formatted_results['total_hits']} documents in {formatted_results['took_ms']}ms using hybrid search")
         
         return formatted_results
     except Exception as e:
