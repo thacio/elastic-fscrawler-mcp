@@ -209,7 +209,7 @@ async def search(
         formatted_results = format_search_results(results)
         
         # if ctx:
-        #     await ctx.info(f"Found {formatted_results['total_hits']} documents in {formatted_results['took_ms']}ms")
+        #     await ctx.info(f"Found {formatted_results['total_hits']} documents in {formatted_results.get('took_ms', 0)}ms")
         
         return formatted_results
     except Exception as e:
@@ -298,7 +298,7 @@ async def semantic_search(
         formatted_results = format_search_results(results)
         
         # if ctx:
-        #     await ctx.info(f"Found {formatted_results['total_hits']} documents in {formatted_results['took_ms']}ms using semantic search")
+        #     await ctx.info(f"Found {formatted_results['total_hits']} documents in {formatted_results.get('took_ms', 0)}ms using semantic search")
         
         return formatted_results
     except Exception as e:
@@ -389,7 +389,7 @@ async def hybrid_search(
         formatted_results = format_search_results(results)
         
         # if ctx:
-        #     await ctx.info(f"Found {formatted_results['total_hits']} documents in {formatted_results['took_ms']}ms using hybrid search")
+        #     await ctx.info(f"Found {formatted_results['total_hits']} documents in {formatted_results.get('took_ms', 0)}ms using hybrid search")
         
         return formatted_results
     except Exception as e:
